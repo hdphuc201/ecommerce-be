@@ -1,0 +1,26 @@
+- Nên tìm hiểu trước về Semanic versioning
+1. Cài đặt gói package
+- yarn init vs yarn init –y  (npm cũng tương tự)
+- Đơn giản là init cho chọn phép đặt tên…
+- init –y thì skip qua những cái đó và thiết lập gói pakage mặc định
+- tạo file server.js trong folder src
+
+2. Install express
+- thay vì dùng require express
+- hãy thêm type module trong file package.json để sử dùng import express
+
+3. tạo file gitignore
+- thêm node_modules
+
+4. tạo github
+- Khởi tạo Git Repository (git init)
+- git remote add duyphucdev https://github.com/HuynhDuyPhuc201/create_nodejs.git
+
+3. Install nodemon
+- giúp tự động tái khởi động ứng dụng khi có sự thay đổi trong source code
+- giúp cho lập trình viên kh phải chạy lại ứng dụng thủ công mỗi khi code thay đổi
+
+
+5. install morgan
+- 
+
