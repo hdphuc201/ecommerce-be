@@ -16,12 +16,12 @@
 - Khởi tạo Git Repository (git init)
 - git remote add duyphucdev https://github.com/HuynhDuyPhuc201/create_nodejs.git
 
-3. Install nodemon
+5. Install nodemon
 - giúp tự động tái khởi động ứng dụng khi có sự thay đổi trong source code
 - tự động cập nhật code khi có sự thay đổi, không cần phải bật tắt server
 - giúp cho lập trình viên kh phải chạy lại ứng dụng thủ công mỗi khi code thay đổi
 
-
-5. install morgan
+6. Tạo cơ sở dữ liệu mongoDB trên Cloud
+6. install morgan
 - 
 
