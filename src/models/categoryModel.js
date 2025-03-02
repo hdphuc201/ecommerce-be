@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 // Định nghĩa schema cho người dùng
 const categorySchema = new mongoose.Schema(
@@ -12,5 +12,5 @@ const categorySchema = new mongoose.Schema(
   }
 );
 
-const categoryModel = mongoose.model("Category", categorySchema);
-export default categoryModel;
+const Category = mongoose.model("Category", categorySchema);
+export default Category;
