@@ -4,7 +4,6 @@
  * YouTube: https://youtube.com/@trungquandev
  * "A bit of fragrance clings to the hand that gives flowers!"
  */
-
 import express from "express";
 import exitHook from "async-exit-hook";
 import { CONNECT_DB, ClOSE_DB } from "./config/mongodb";
@@ -22,8 +21,9 @@ const START_SERVER = () => {
       credentials: true, // Bắt buộc nếu gửi cookie từ FE
     })
   );
+  app.use(express.json({ limit: "5mb" })); // Cho phép JSON tối đa 5MB
+  app.use(express.urlencoded({ extended: true, limit: "5mb" })); // Xử lý form-urlencoded
 
-  app.use(express.json());
   app.use(cookieParser()); // Sử dụng middleware để đọc cookie
 
   app.use(Router);

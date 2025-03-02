@@ -1,33 +1,32 @@
-import userModel from "~/models/UserModel";
+import User from "~/models/userModel";
 import bcrypt from "bcrypt";
 import { jwtService } from "./jwtService";
 
+
 const registerUser = async (newUser) => {
   try {
-    const { name, email, phone, password, isAdmin } = newUser;
+    const { name, email, password } = newUser;
 
     const hash = bcrypt.hashSync(password, 10);
-    const createdUser = await userModel.create({
+    const createdUser = await User.create({
       name,
       email,
-      phone,
       password: hash,
-      isAdmin,
     });
     return {
       success: true,
-      message: "Tạo user thành công",
+      message: "Đăng ký thành công",
       data: createdUser,
     };
   } catch (error) {
     console.error(error);
-    throw error;
+    throw new Error(error);
   }
 };
 const loginUser = async (userLogin) => {
   try {
     const { email, password } = userLogin;
-    let checkUser = await userModel.findOne({ email });
+    let checkUser = await User.findOne({ email });
 
     if (!checkUser) throw new Error("Email không tồn tại");
 
@@ -50,17 +49,53 @@ const loginUser = async (userLogin) => {
   }
 };
 
+const createUser = async (newUser) => {
+  try {
+    const { avatar, name, email, phone, password, isAdmin, address } = newUser;
+
+    const hash = bcrypt.hashSync(password, 10);
+    const createdUser = await User.create({
+      avatar,
+      name,
+      email,
+      phone,
+      password: hash,
+      address,
+      isAdmin,
+    });
+    return {
+      success: true,
+      message: "Tạo user thành công",
+      data: createdUser,
+    };
+  } catch (error) {
+    console.error(error);
+    throw new Error(error);
+  }
+};
+
+const getDetail = async (id) => {
+  try {
+    const user = await User.findById(id, "-password");
+    if (!user) {
+      throw new Error("User không tồn tại");
+    }
+    return { user };
+  } catch (error) {
+    return { success: false, message: error.message || "Lỗi server" };
+  }
+};
+
 const updateUser = async (id, data) => {
   try {
-    const { name, email, phone, password, newPassword, address, avatar } = data;
+    const { name, phone, password, newPassword, address, avatar } = data;
 
     // Tìm user hiện tại
-    const userCurrent = await userModel.findById(id);
+    const userCurrent = await User.findById(id);
     if (!userCurrent) {
       throw new Error("User không tồn tại");
     }
     // Chỉ cập nhật những field được cung cấp
-    console.log("avatar", avatar);
     const updateData = {};
     if (name && name !== "") updateData.name = name;
     if (address) updateData.address = address;
@@ -88,7 +123,7 @@ const updateUser = async (id, data) => {
     }
 
     // Thực hiện cập nhật
-    const updatedUser = await userModel.findByIdAndUpdate(id, updateData, {
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
       new: true,
     });
 
@@ -102,28 +137,27 @@ const updateUser = async (id, data) => {
   }
 };
 
-const deleteUser = async (id) => {
+const deleteAllUsers = async (passwordAdmin) => {
   try {
-    const userCurrent = await userModel.findById(id);
-    if (!userCurrent) {
-      throw new Error("User không tồn tại");
-    }
-    await userModel.findByIdAndDelete(id);
-    return {
-      message: "Xóa tài khoản thành công",
-    };
-  } catch (error) {
-    return { success: false, message: error.message || "Lỗi server" };
-  }
-};
+    const admin = await User.findOne({ isAdmin: true });
+    if (!admin)
+      return { success: false, message: "Không tìm thấy tài khoản admin" };
 
-const getDetail = async (id) => {
-  try {
-    const user = await userModel.findById(id, "-password");
-    if (!user) {
-      throw new Error("User không tồn tại");
+    const isMatch = await bcrypt.compare(passwordAdmin, admin.password);
+    if (!isMatch)
+      return { success: false, message: "Password admin không trùng khớp" };
+
+    const result = await User.deleteMany({ isAdmin: false });
+    // Kiểm tra nếu không có user nào bị xóa
+    if (result.deletedCount === 0) {
+      return { success: false, message: "Không có người dùng nào để xóa" };
     }
-    return { user };
+
+    return {
+      success: true,
+      message: "Xóa tất cả user thành công",
+      deletedCount: result.deletedCount,
+    };
   } catch (error) {
     return { success: false, message: error.message || "Lỗi server" };
   }
@@ -133,6 +167,7 @@ export const userService = {
   registerUser,
   loginUser,
   updateUser,
-  deleteUser,
   getDetail,
+  createUser,
+  deleteAllUsers,
 };

@@ -1,21 +1,17 @@
-import productModel from "~/models/productModel";
-import bcrypt from "bcrypt";
-import userModel from "~/models/UserModel";
-import categoryModel from "~/models/CategoryModel";
-
-const { StatusCodes } = require("http-status-codes");
+import Product from "~/models/productModel";
 
 const createProduct = async (newProduct) => {
   try {
     const { name } = newProduct;
-    const checkProduct = await productModel.findOne({ name });
+    const checkProduct = await Product.findOne({ name });
     if (checkProduct !== null) {
       return {
         success: false,
         message: "Tên sản phẩm đã tồn tại",
       };
     }
-    const createProduct = await productModel.create(newProduct);
+
+    const createProduct = await Product.create(newProduct);
     return {
       success: true,
       message: "Tạo sản phẩm thành công",
@@ -26,17 +22,9 @@ const createProduct = async (newProduct) => {
   }
 };
 
-const readProduct = (req, res) => {
-  // Logic to read a product
-  res.status(StatusCodes.OK).send("Product details");
-};
-
-const updateProduct = async (id, data) => {
+const updateProduct = async (form) => {
   try {
-    const product = await productModel.findById(id);
-    if (!product) throw new Error("Sản phẩm không tồn tại");
-
-    let updateData = {};
+    const { _id } = form;
 
     const validations = {
       name: (valid) => valid,
@@ -49,21 +37,27 @@ const updateProduct = async (id, data) => {
       description: (valid) => valid,
     };
 
-    // Cập nhật updateData nếu có giá trị hợp lệ từ data
+    let updateData = {};
+
+    // ✅ Kiểm tra tất cả các field trước khi return lỗi
     for (const item in validations) {
-      if (validations[item](data[item])) {
-        updateData[item] = data[item]; // Cập nhật đúng giá trị từ data
+      if (!validations[item](form[item])) {
+        return { success: false, message: `${item} không đúng định dạng hoặc thiếu` };
       }
+      updateData[item] = form[item]; // ✅ Thêm vào updateData mà không return ngay
+    }
+
+    // Nếu không có dữ liệu hợp lệ để update, return lỗi
+    if (Object.keys(updateData).length === 0) {
+      return { success: false, message: "Không có dữ liệu cập nhật hợp lệ" };
     }
 
     // Tiến hành cập nhật sản phẩm
-    const updatedProduct = await productModel.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
+    const updatedProduct = await Product.findByIdAndUpdate(_id, updateData, {
+      new: true,
+    });
 
-    if (updatedProduct && Object.keys(updatedProduct).length > 0) {
+    if (updatedProduct) {
       return {
         success: true,
         message: "Cập nhật Sản phẩm thành công",
@@ -80,30 +74,26 @@ const updateProduct = async (id, data) => {
   }
 };
 
-const deleteProduct = async (id) => {
+
+const deleteProduct = async (ids) => {
   try {
-    const productCurrent = await productModel.findById(id);
-    if (!productCurrent) {
-      throw new Error("Sản phẩm không tồn tại");
+    const result = await Product.deleteMany({ _id: { $in: ids } });
+
+    if (result.deletedCount > 0) {
+      return {
+        success: true,
+        message: `${result.deletedCount} sản phẩm đã được xóa.`,
+      };
+    } else {
+      return { success: false, message: "Không tìm thấy sản phẩm nào để xóa." };
     }
-    await productModel.findByIdAndDelete(id);
-    return {
-      success: true,
-      message: "Xóa sản phẩm thành công",
-    };
   } catch (error) {
     return { success: false, message: error.message || "Lỗi server" };
   }
 };
-const deleteAllProduct = async (passwordAdmin) => {
+const deleteAllProduct = async () => {
   try {
-    const admin = await userModel.findOne({ isAdmin: true });
-    if (!admin) return { message: "Không tìm thấy tài khoản admin" };
-
-    const isMatch = await bcrypt.compare(passwordAdmin, admin?.password);
-    if (!isMatch) return { message: "Password admin không trùng khớp" };
-
-    const result = await productModel.deleteMany({});
+    const result = await Product.deleteMany({});
     if (result.deletedCount === 0) return { message: "Không có sản phẩm nào" };
 
     return {
@@ -117,7 +107,7 @@ const deleteAllProduct = async (passwordAdmin) => {
 
 const getDetailProduct = async (id) => {
   try {
-    const product = await productModel.findById(id);
+    const product = await Product.findById(id);
     if (!product) {
       throw new Error("Sản phẩm không tồn tại");
     }
@@ -130,22 +120,36 @@ const getAllProduct = async (limit, page, sortObj, filterConditions) => {
   try {
     let products;
     let totalProduct;
-    if (Object.keys(filterConditions).length > 0) {
-      totalProduct = await productModel.countDocuments(filterConditions);
-      products = await productModel
-        .find(filterConditions)
-        .limit(limit)
-        .skip((page - 1) * limit)
-        .sort(sortObj);
-    } else {
-      totalProduct = await productModel.countDocuments();
-      products = await productModel
-        .find({})
-        .limit(limit)
-        .skip((page - 1) * limit)
-        .sort(sortObj);
+    const offset = (page - 1) * limit;
+
+    // Xác thực page và limit để đảm bảo chúng là các số nguyên dương
+    if (page <= 0 || limit <= 0) {
+      return {
+        success: false,
+        message: "Page và limit phải là các số nguyên dương",
+      };
     }
 
+    if (Object.keys(filterConditions).length > 0) {
+      totalProduct = await Product.countDocuments(filterConditions);
+      products = await Product.find(filterConditions)
+        .limit(limit)
+        .skip(offset)
+        .sort(sortObj);
+    } else {
+      totalProduct = await Product.countDocuments();
+      products = await Product.find({}).limit(limit).skip(offset).sort(sortObj);
+    }
+
+    if (offset >= totalProduct) {
+      return {
+        data: [],
+        total: totalProduct,
+        currentPage: page,
+        totalPage: Math.ceil(totalProduct / limit),
+        length: 0,
+      };
+    }
     return {
       data: products,
       total: totalProduct,
@@ -157,31 +161,62 @@ const getAllProduct = async (limit, page, sortObj, filterConditions) => {
     throw new Error(error.message);
   }
 };
-
-const createCategoryProduct = async (category) => {
+const createCate = async (category) => {
   const { title, id } = category;
-  try {
-    const exitCategory = await categoryModel.findOne({ title, id });
-    if (exitCategory) throw new Error("Category đã tồn tại");
 
-    const result = await categoryModel.create({ title, id });
+  // Kiểm tra xem id và title có hợp lệ không
+  if (typeof id !== "number") {
+    return { success: false, message: "Sai định dạng" };
+  }
+  if (!id || !title || title.trim() === "") {
+    return { success: false, message: "ID và title là bắt buộc" };
+  }
+
+  try {
+    // Kiểm tra xem danh mục đã tồn tại chưa
+    const exitCategory = await Product.findOne({
+      $or: [{ id }, { title }],
+    });
+    if (exitCategory) return { success: false, message: "Danh mục đã tồn tại" };
+
+    // Tạo mới danh mục
+    const result = await Product.create({ title, id });
 
     return {
       success: true,
       message: "Tạo danh mục thành công",
-      category: result,
+      Category: result,
     };
   } catch (error) {
     return { success: false, message: error.message || "Lỗi server" };
   }
 };
+// Xóa sản phẩm theo ID
+const deleteCate = async (ids) => {
+  try {
+    const result = await Product.deleteMany({ _id: { $in: ids } });
+
+    if (result.deletedCount > 0) {
+      return {
+        success: true,
+        message: `${result.deletedCount} danh mục đã được xóa.`,
+      };
+    } else {
+      return { success: false, message: "Không tìm thấy danh mục nào để xóa." };
+    }
+  } catch (error) {
+    return { success: false, message: error.message || "Lỗi server" };
+  }
+};
+
 export const productService = {
   createProduct,
-  readProduct,
   updateProduct,
   deleteProduct,
   deleteAllProduct,
   getAllProduct,
   getDetailProduct,
-  createCategoryProduct,
+  // cate
+  createCate,
+  deleteCate
 };

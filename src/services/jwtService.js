@@ -1,51 +1,26 @@
 import jwt from "jsonwebtoken";
 import { env } from "~/config/environment";
 
+// Chỉ gửi thông tin cần thiết vào payload để tăng cường bảo mật
 const generateAccessToken = (user) => {
+  // Gửi ID và quyền hạn (isAdmin) của người dùng thay vì toàn bộ object user
   return jwt.sign(
-    { user },
+    { _id: user._id, isAdmin: user.isAdmin }, // Payload đơn giản, an toàn
     env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "3h" } // Token hết hạn sau 1 giờ
+    { expiresIn: "3d" } // Token hết hạn sau 3 giờ
   );
 };
 
 const generateRefreshToken = (user) => {
+  // Tạo Refresh Token với thông tin cần thiết
   return jwt.sign(
-    { user },
+    { _id: user._id, isAdmin: user.isAdmin }, // Payload đơn giản, an toàn
     env.REFRESH_TOKEN_SECRET,
     { expiresIn: "365d" } // Token hết hạn sau 365 ngày
   );
 };
 
-// const refreshToken = async (refreshToken) => {
-//   try {
-//     jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET, (err, user) => {
-//       if (err)
-//         return res
-//           .status(403)
-//           .json({ success: false, message: "Refresh token không hợp lệ" });
-
-//       // Nếu hợp lệ, tạo access token mới
-//       const newAccessToken = jwt.sign(
-//         { id: user.id },
-//         process.env.ACCESS_SECRET,
-//         {
-//           expiresIn: "15m", // Access token có thời hạn 15 phút
-//         }
-//       );
-
-//       res.json({ success: true, access_token: newAccessToken });
-//     });
-//     const { user: payload } = userDecoded;
-//     const new_access_token = generateAccessToken(payload);
-//     return { success: true, access_token: newAccessToken };
-//   } catch (error) {
-//     throw new Error();
-//   }
-// };
-
 export const jwtService = {
   generateAccessToken,
   generateRefreshToken,
-  // refreshToken,
 };
