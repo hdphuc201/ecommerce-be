@@ -1,75 +1,54 @@
+import Category from "~/models/categoryModel";
+import Product from "~/models/productModel";
 import { productService } from "~/services/productService";
-import categoryModel from "~/models/CategoryModel";
-const { StatusCodes } = require("http-status-codes");
+import removeVietnameseTones from "~/utils/removeVietnameseTones";
 
 const createProduct = async (req, res, next) => {
+  if (!req.body.name) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Tên sản phẩm là bắt buộc!" });
+  }
   try {
     const validations = {
       name: (valid) => valid,
       image: (valid) => valid,
       categories: (valid) => valid,
-      price: (valid) => valid,
-      price_old: (valid) => valid,
-      countInstock: (valid) => valid,
+      price: (valid) => Number(valid),
+      price_old: (valid) => Number(valid),
+      countInstock: (valid) => Number(valid),
       rating: (valid) => valid,
       description: (valid) => valid,
     };
 
     for (const item in validations) {
       // console.log("validations[item]", req.body[item]);
-      if (!validations[item](req.body[item]))
-        return res.status(401).json({ message: `Missing valid ${item}` });
+      if (!validations[item](req.body[item])) {
+        return res
+          .status(401)
+          .json({ message: `${item} thiếu hoặc sai định dạng` });
+      }
     }
 
     const result = await productService.createProduct(req.body);
-    if (!result.success) res.status(400).json(result);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
     return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
-};
-
-const readProduct = (req, res, next) => {
-  // Logic to read a product
-  res.status(StatusCodes.OK).send("Product details");
 };
 
 const updateProduct = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    if (!id) res.status(401).json({ message: "Không tìm thấy ID Product" });
-    const result = await productService.updateProduct(id, req.body);
-    return res.status(StatusCodes.CREATED).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const deleteProduct = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    console.log("id", id);
-    if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
-
-    const result = await productService.deleteProduct(id);
-    if (!result.success) res.status(401).json(result);
+    const result = await productService.updateProduct(req.body);
     return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
 };
 
-const getDetailProduct = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
-
-    const result = await productService.getDetailProduct(id);
-    return res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
 const getAllProduct = async (req, res, next) => {
   try {
     const { limit, page, sort, type, price, rating, q, categories } = req.query;
@@ -92,7 +71,7 @@ const getAllProduct = async (req, res, next) => {
     if (rating) {
       const ratingValue = Number(rating);
       if (!isNaN(ratingValue)) {
-        filterConditions.rating = { $eq: Number(rating) };
+        filterConditions.rating = { $gte: Number(rating) };
       } else {
         console.warn(`Invalid rating value: ${rating}`);
       }
@@ -121,11 +100,37 @@ const getAllProduct = async (req, res, next) => {
   }
 };
 
+const getDetailProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
+
+    const result = await productService.getDetailProduct(id);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteProduct = async (req, res, next) => {
+  try {
+    const { id } = req.query;
+    if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
+    const isArray = Array.isArray(id) ? id : [id];
+    const result = await productService.deleteProduct(isArray);
+    if (!result.success) return res.status(401).json(result);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteAllProduct = async (req, res, next) => {
   try {
     const { passwordAdmin } = req.body;
-    if (!passwordAdmin)
-      res.status(400).json({ message: "Password admin là bắt buộc" });
+    if (!passwordAdmin) {
+      return res.status(400).json({ message: "Password admin là bắt buộc" }); // Thêm return ở đây
+    }
 
     const result = await productService.deleteAllProduct(passwordAdmin);
     if (!result.success) return res.status(400).json(result);
@@ -134,38 +139,148 @@ const deleteAllProduct = async (req, res, next) => {
   }
 };
 
-const createCategoryProduct = async (req, res, next) => {
+const searchProduct = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return res.status(400).json({ message: "Missing query" });
+    }
+
+    const regex = new RegExp(removeVietnameseTones(q), "i");
+
+    const filterConditions = { slugName: { $regex: regex } };
+
+    const result = await Product.find(filterConditions);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+const getCate = async (req, res, next) => {
+  try {
+    const result = await Category.find({});
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createCate = async (req, res, next) => {
   try {
     const category = req.body;
     if (!category) return res.status(400).json({ message: "Chưa có danh mục" });
 
-    const result = await productService.createCategoryProduct(category);
-    if (!result.success) res.status(400).json(result);
-    return res.status(200).json(result);
+    const result = await productService.createCate(category);
+    if (!result.success) {
+      return res.status(400).json(result); // Dừng hàm lại sau khi gửi phản hồi lỗi
+    }
+    return res.status(200).json(result); // Nếu thành công, gửi phản hồi thành công
   } catch (error) {
     next(error);
   }
 };
 
-const getCategoryProduct = async (req, res, next) => {
+const deleteCate = async (req, res, next) => {
   try {
-    const result = await categoryModel.find({});
-    if (!result) return res.status(400).json({ message: "Không có danh mục" });
-
+    const { id } = req.query;
+    if (!id) return res.status(400).json({ message: "không có ID danh mục" });
+    const isArray = Array.isArray(id) ? id : [id];
+    const result = await productService.deleteCate(isArray);
+    if (!result.success) return res.status(401).json(result);
     return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
 };
 
+const deleteAllCate = async (req, res, next) => {
+  try {
+    const result = await Category.deleteMany({});
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    return res.status(400).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const testProduct = async (req, res, next) => {
+  const newProduct = new Product(req.body);
+
+  // Middleware `pre('save')` sẽ chạy ngay tại đây
+  console.log("Product đã được tạo, nhưng chưa lưu:", newProduct);
+  try {
+    const validations = {
+      name: (valid) => valid,
+      // image: (valid) => valid,
+      categories: (valid) => valid,
+      price: (valid) => Number(valid),
+      price_old: (valid) => Number(valid),
+      countInstock: (valid) => Number(valid),
+      rating: (valid) => valid,
+      description: (valid) => valid,
+    };
+
+    // const newProduct = await Product.create({
+    //   name: "Văn hóa",
+    //   image: "https://example.com/image.jpg",
+    //   categories: 1,
+    //   price: 23000,
+    //   price_old: 25000,
+    //   countInstock: 10,
+    //   rating: 4.5,
+    //   description: "Sản phẩm mới",
+    // });
+    for (const item in validations) {
+      console.log("validations[item]", req.body[item]);
+      if (!validations[item](req.body[item])) {
+        return res
+          .status(401)
+          .json({ message: `${item} thiếu hoặc sai định dạng` });
+      }
+    }
+    console.log("Product  lưu:", newProduct);
+
+    await newProduct.save();
+    res.status(201).json({ success: true, product: newProduct });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addCart = async (req, res, next) => {
+  try {
+    const { id } = req.body;
+    if (!id) {
+      return res.status(401).json({ success: false, message: "Không có id" });
+    }
+    const itemProduct = await Product.findById(id);
+    console.log("itemProduct", itemProduct);
+
+    let listCart = [];
+
+    listCart.push(itemProduct);
+    console.log(listCart)
+    res.status(200).json({ success: true, listProduct: listCart });
+  } catch (error) {
+    next(error);
+  }
+};
 export const productController = {
   createProduct,
-  readProduct,
   updateProduct,
   deleteProduct,
+  searchProduct,
   getDetailProduct,
   getAllProduct,
   deleteAllProduct,
-  createCategoryProduct,
-  getCategoryProduct,
+  // cate
+  getCate,
+  createCate,
+  deleteCate,
+  deleteAllCate,
+  testProduct,
+  addCart,
 };

@@ -1,4 +1,5 @@
 import express from "express";
+import { upload } from "~/config/Mullter";
 import { productController } from "~/controllers/productController";
 import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware";
 
@@ -9,17 +10,19 @@ Router.post(
   "/create-product",
   authMiddleware,
   isAdmin,
+  upload.single("image"),
   productController.createProduct
 );
 
 Router.put(
-  "/update-product/:id",
+  "/update-product",
   authMiddleware,
   isAdmin,
+  upload.single("image"),
   productController.updateProduct
 );
 Router.delete(
-  "/delete-product/:id",
+  "/delete-product",
   authMiddleware,
   isAdmin,
   productController.deleteProduct
@@ -30,21 +33,35 @@ Router.delete(
   isAdmin,
   productController.deleteAllProduct
 );
-Router.post(
-  "/category-product",
-  authMiddleware,
-  isAdmin,
-  productController.createCategoryProduct
-);
-Router.get(
-  "/getCategory",
-  authMiddleware,
-  isAdmin,
-  productController.getCategoryProduct
-);
 
 // Các route không yêu cầu xác thực (public)
 Router.get("/get-detail/:id", productController.getDetailProduct);
 Router.get("/getAllProduct", productController.getAllProduct);
-// Router.post("/read-product", productController.readProduct);
+Router.post("/search", productController.searchProduct);
+Router.post("/add-cart", productController.addCart);
+
+// cate
+Router.get(
+  "/getCategory",
+  productController.getCate
+);
+Router.post(
+  "/create-category",
+  authMiddleware,
+  isAdmin,
+  productController.createCate
+);
+Router.delete(
+  "/delete-cateogry",
+  authMiddleware,
+  isAdmin,
+  productController.deleteCate
+);
+Router.delete(
+  "/delete-all-cateogry",
+  authMiddleware,
+  isAdmin,
+  productController.deleteAllCate
+);
+
 export const productRoute = Router;

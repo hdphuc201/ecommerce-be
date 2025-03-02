@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-// Định nghĩa schema cho người dùng
+// Định nghĩa schema cho đơn hàng
 const orderSchema = new mongoose.Schema(
   {
     orderItems: [
@@ -42,5 +42,5 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-const orderModel = mongoose.model("Order", orderSchema);
-export default orderModel;
+const Order = mongoose.model("Order", orderSchema);
+export default Order;

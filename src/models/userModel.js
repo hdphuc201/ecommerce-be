@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    phone: { type: String, required: true },
+    phone: { type: String },
     password: { type: String, required: true },
     isAdmin: { type: Boolean, default: false },
     avatar: { type: String },
@@ -14,6 +14,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const userModel = mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
 
-export default userModel;
+export default User;
