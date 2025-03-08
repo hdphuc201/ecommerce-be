@@ -1,8 +1,9 @@
+import Category from "~/models/categoryModel";
 import Product from "~/models/productModel";
 
 const createProduct = async (newProduct) => {
   try {
-    const { name } = newProduct;
+    const { name, image } = newProduct;
     const checkProduct = await Product.findOne({ name });
     if (checkProduct !== null) {
       return {
@@ -10,8 +11,9 @@ const createProduct = async (newProduct) => {
         message: "Tên sản phẩm đã tồn tại",
       };
     }
+    const _newProduct = { ...newProduct, image };
 
-    const createProduct = await Product.create(newProduct);
+    const createProduct = await Product.create(_newProduct);
     return {
       success: true,
       message: "Tạo sản phẩm thành công",
@@ -42,7 +44,10 @@ const updateProduct = async (form) => {
     // ✅ Kiểm tra tất cả các field trước khi return lỗi
     for (const item in validations) {
       if (!validations[item](form[item])) {
-        return { success: false, message: `${item} không đúng định dạng hoặc thiếu` };
+        return {
+          success: false,
+          message: `${item} không đúng định dạng hoặc thiếu`,
+        };
       }
       updateData[item] = form[item]; // ✅ Thêm vào updateData mà không return ngay
     }
@@ -73,7 +78,6 @@ const updateProduct = async (form) => {
     throw new Error(error.message || "Lỗi trong quá trình cập nhật");
   }
 };
-
 
 const deleteProduct = async (ids) => {
   try {
@@ -161,6 +165,8 @@ const getAllProduct = async (limit, page, sortObj, filterConditions) => {
     throw new Error(error.message);
   }
 };
+
+// category
 const createCate = async (category) => {
   const { title, id } = category;
 
@@ -174,13 +180,13 @@ const createCate = async (category) => {
 
   try {
     // Kiểm tra xem danh mục đã tồn tại chưa
-    const exitCategory = await Product.findOne({
+    const exitCategory = await Category.findOne({
       $or: [{ id }, { title }],
     });
     if (exitCategory) return { success: false, message: "Danh mục đã tồn tại" };
 
     // Tạo mới danh mục
-    const result = await Product.create({ title, id });
+    const result = await Category.create({ title, id });
 
     return {
       success: true,
@@ -194,7 +200,7 @@ const createCate = async (category) => {
 // Xóa sản phẩm theo ID
 const deleteCate = async (ids) => {
   try {
-    const result = await Product.deleteMany({ _id: { $in: ids } });
+    const result = await Category.deleteMany({ _id: { $in: ids } });
 
     if (result.deletedCount > 0) {
       return {
@@ -218,5 +224,5 @@ export const productService = {
   getDetailProduct,
   // cate
   createCate,
-  deleteCate
+  deleteCate,
 };

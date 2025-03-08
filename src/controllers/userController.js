@@ -3,7 +3,6 @@ import { env } from "~/config/environment";
 import User from "~/models/userModel";
 import { userService } from "~/services/userService";
 
-
 const registerUser = async (req, res, next) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
@@ -31,14 +30,12 @@ const registerUser = async (req, res, next) => {
     }
 
     if (password !== confirmPassword) {
-      return res
-        .status(400)
-        .json({ message: "confirmPassword không trùng khớp" });
+      return res.status(400).json({ message: "Mật khẩu không trùng khớp" });
     }
 
     const newUser = await userService.registerUser(req.body);
 
-    return res.status(200).json(newUser); // Sử dụng return ở đây
+    return res.status(200).json(newUser);
   } catch (error) {
     next(error);
   }
@@ -91,7 +88,7 @@ const refreshToken = async (req, res, next) => {
       if (err) {
         return res
           .status(403)
-          .json({ success: false, message: "Refresh token không hợp lệ" }); // Dùng return ở đây
+          .json({ success: false, message: "Refresh token không hợp lệ" });
       }
       const newAccessToken = jwt.sign(
         { user: user.user },
@@ -100,10 +97,10 @@ const refreshToken = async (req, res, next) => {
         { expiresIn: "3d" }
       );
 
-      return res.json({ success: true, access_token: newAccessToken }); // Dùng return ở đây
+      return res.json({ success: true, access_token: newAccessToken });
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error }); // Dùng return ở đây
+    return res.status(500).json({ success: false, message: error });
   }
 };
 
@@ -144,14 +141,12 @@ const createUser = async (req, res, next) => {
     }
 
     if (password !== confirmPassword) {
-      return res
-        .status(400)
-        .json({ message: "confirmPassword không trùng khớp" });
+      return res.status(400).json({ message: "Mật khẩu không trùng khớp" });
     }
 
     const newUser = await userService.createUser(req.body);
 
-    return res.status(200).json(newUser); // Sử dụng return ở đây
+    return res.status(200).json(newUser);
   } catch (error) {
     next(error);
   }
@@ -161,9 +156,8 @@ const updateUser = async (req, res, next) => {
   try {
     // update sử dụng cho user và admin
     // nếu req?.body (từ admin) không có thì lấy user id (từ user)
-    const { _id } = req?.body ?? {};
-    const id = req?.body ? _id : req.user?._id;
-
+    const { _id } = req.body;
+    const id = _id ? _id : req?.user._id;
     if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
     const result = await userService.updateUser(id, req.body);
     if (!result.success) return res.status(400).json(result);
@@ -230,8 +224,170 @@ const deleteAllUsers = async (req, res, next) => {
 
     const result = await userService.deleteAllUsers(passwordAdmin);
     if (!result.success) return res.status(400).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    // Thêm một phản hồi thành công (nếu cần) hoặc điều gì đó tương tự ở đây
+const getAddress = async (req, res, next) => {
+  try {
+    const id = req.user._id;
+
+    if (!id) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Chưa đăng nhập" });
+    }
+
+    const user = await User.findById(id);
+    const listAddress = user.address.map((item) => item);
+    console.log("listAddress", listAddress);
+    if (!listAddress.length) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Chưa cập nhật địa chỉ" });
+    }
+
+    return res.status(200).json(listAddress);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createAddress = async (req, res, next) => {
+  try {
+    const id = req.user._id;
+    const { houseNumber, district, city, defaultAddress } = req.body;
+    console.log("defaultAddress", defaultAddress);
+
+    if (!id) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Chưa đăng nhập" });
+    }
+
+    const validators = {
+      houseNumber: (val) => val,
+      district: (val) => val,
+      city: (val) => val,
+    };
+
+    for (const filed in validators) {
+      if (!validators[filed](req.body[filed])) {
+        return res
+          .status(400)
+          .json({ message: `${filed} không hợp lệ hoặc thiếu` });
+      }
+    }
+
+    if (defaultAddress) {
+      await User.findByIdAndUpdate(id, {
+        $set: { "address.$[].defaultAddress": false }, // Đặt tất cả defaultAddress = false
+      });
+    }
+    const userUpdate = await User.findByIdAndUpdate(
+      id,
+      {
+        $push: {
+          address: { houseNumber, district, city, defaultAddress },
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (userUpdate) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Tạo địa chỉ thành công", userUpdate });
+    }
+    // const result = await user
+
+    // if (!result.success) return res.status(400).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const removeAddress = async (req, res, next) => {
+  try {
+    const id = req.user._id;
+    const { id: addressId } = req.query;
+
+    if (!id) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Chưa đăng nhập" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Người dùng không tồn tại" });
+    }
+    const listAddress = user.address?.filter(
+      (item) => item._id.toString() !== addressId
+    );
+
+    // Nếu không tìm thấy địa chỉ nào cần xóa
+    if (user.address.length === listAddress.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy địa chỉ để xóa" });
+    }
+    // Cập nhật lại danh sách địa chỉ sau khi xóa
+    user.address = listAddress;
+
+    // Lưu lại người dùng với danh sách địa chỉ mới
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Xóa thành công", listAddress });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateAddress = async (req, res, next) => {
+  try {
+    const id = req?.user?._id;
+    const { houseNumber, district, city, defaultAddress, addressId } = req.body;
+
+    if (!id) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Chưa đăng nhập" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Người dùng không tồn tại" });
+    }
+
+    let itemAddress = user.address?.findIndex(
+      (item) => item._id.toString() === addressId
+    );
+    if (itemAddress === -1)
+      return res.status(400).json({ message: "Địa chỉ không có" });
+
+    const updateAddress = {};
+    if (houseNumber) updateAddress.houseNumber = houseNumber;
+    if (district) updateAddress.district = district;
+    if (city) updateAddress.city = city;
+    if (defaultAddress) updateAddress.defaultAddress = defaultAddress;
+
+    user.address[itemAddress] = updateAddress;
+    await user.save();
+    console.log("itemAddress", itemAddress);
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Cập nhật thành công" });
   } catch (error) {
     next(error);
   }
@@ -247,4 +403,8 @@ export const userController = {
   getAllUser,
   deleteUser,
   deleteAllUsers,
+  getAddress,
+  createAddress,
+  removeAddress,
+  updateAddress,
 };

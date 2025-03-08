@@ -2,16 +2,16 @@ import User from "~/models/userModel";
 import bcrypt from "bcrypt";
 import { jwtService } from "./jwtService";
 
-
 const registerUser = async (newUser) => {
   try {
-    const { name, email, password } = newUser;
+    const { name, email, password, isAdmin } = newUser;
 
     const hash = bcrypt.hashSync(password, 10);
     const createdUser = await User.create({
       name,
       email,
       password: hash,
+      isAdmin,
     });
     return {
       success: true,
@@ -27,7 +27,6 @@ const loginUser = async (userLogin) => {
   try {
     const { email, password } = userLogin;
     let checkUser = await User.findOne({ email });
-
     if (!checkUser) throw new Error("Email không tồn tại");
 
     const checkPass = await bcrypt.compare(password, checkUser.password);
@@ -35,7 +34,9 @@ const loginUser = async (userLogin) => {
 
     const access_token = jwtService.generateAccessToken(checkUser);
     const refresh_token = jwtService.generateRefreshToken(checkUser);
-    const { password: _password, ...user } = checkUser.toObject(); // Chuyển từ Mongoose Document sang object
+    const { password: _password, ...user } = checkUser
+      ? checkUser.toObject()
+      : {}; // Chuyển từ Mongoose Document sang object
 
     return {
       success: true,
@@ -51,7 +52,7 @@ const loginUser = async (userLogin) => {
 
 const createUser = async (newUser) => {
   try {
-    const { avatar, name, email, phone, password, isAdmin, address } = newUser;
+    const { avatar, name, email, phone, password, isAdmin } = newUser;
 
     const hash = bcrypt.hashSync(password, 10);
     const createdUser = await User.create({
@@ -60,7 +61,6 @@ const createUser = async (newUser) => {
       email,
       phone,
       password: hash,
-      address,
       isAdmin,
     });
     return {

@@ -11,7 +11,12 @@ Router.post("/refresh-token", userController.refreshToken);
 
 // Route cần xác thực: Cần authMiddleware để đảm bảo người dùng đã đăng nhập
 Router.post("/create", upload.single("avatar"), userController.createUser);
-Router.put("/update-user", authMiddleware, upload.single("avatar"), userController.updateUser);
+Router.put(
+  "/update-user",
+  authMiddleware,
+  upload.single("avatar"),
+  userController.updateUser
+);
 Router.get("/get-detail/:id", authMiddleware, userController.getDetail);
 Router.get("/getall", authMiddleware, isAdmin, userController.getAllUser);
 Router.delete(
@@ -26,5 +31,10 @@ Router.delete(
   isAdmin,
   userController.deleteAllUsers
 );
+
+Router.get("/getAddress", authMiddleware, userController.getAddress);
+Router.post("/createAddress", authMiddleware, userController.createAddress);
+Router.delete("/removeAddress", authMiddleware, userController.removeAddress);
+Router.put("/updateAddress", authMiddleware, userController.updateAddress);
 
 export const userRoute = Router;

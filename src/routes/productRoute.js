@@ -10,7 +10,7 @@ Router.post(
   "/create-product",
   authMiddleware,
   isAdmin,
-  upload.single("image"),
+  upload.array("image", 12),
   productController.createProduct
 );
 
@@ -38,13 +38,9 @@ Router.delete(
 Router.get("/get-detail/:id", productController.getDetailProduct);
 Router.get("/getAllProduct", productController.getAllProduct);
 Router.post("/search", productController.searchProduct);
-Router.post("/add-cart", productController.addCart);
 
 // cate
-Router.get(
-  "/getCategory",
-  productController.getCate
-);
+Router.get("/getCategory", productController.getCate);
 Router.post(
   "/create-category",
   authMiddleware,

@@ -2,6 +2,9 @@ import Category from "~/models/categoryModel";
 import Product from "~/models/productModel";
 import { productService } from "~/services/productService";
 import removeVietnameseTones from "~/utils/removeVietnameseTones";
+import { bcrypt } from "bcrypt";
+import { jwt } from "jsonwebtoken";
+import Cart from "~/models/cartModel";
 
 const createProduct = async (req, res, next) => {
   if (!req.body.name) {
@@ -9,10 +12,11 @@ const createProduct = async (req, res, next) => {
       .status(400)
       .json({ success: false, message: "Tên sản phẩm là bắt buộc!" });
   }
+
   try {
     const validations = {
       name: (valid) => valid,
-      image: (valid) => valid,
+      image: (valid) => valid.length > 0,
       categories: (valid) => valid,
       price: (valid) => Number(valid),
       price_old: (valid) => Number(valid),
@@ -169,6 +173,7 @@ const getCate = async (req, res, next) => {
 const createCate = async (req, res, next) => {
   try {
     const category = req.body;
+    console.log("category", category);
     if (!category) return res.status(400).json({ message: "Chưa có danh mục" });
 
     const result = await productService.createCate(category);
@@ -200,74 +205,12 @@ const deleteAllCate = async (req, res, next) => {
     if (!result.success) {
       return res.status(400).json(result);
     }
-    return res.status(400).json(result);
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
 };
 
-const testProduct = async (req, res, next) => {
-  const newProduct = new Product(req.body);
-
-  // Middleware `pre('save')` sẽ chạy ngay tại đây
-  console.log("Product đã được tạo, nhưng chưa lưu:", newProduct);
-  try {
-    const validations = {
-      name: (valid) => valid,
-      // image: (valid) => valid,
-      categories: (valid) => valid,
-      price: (valid) => Number(valid),
-      price_old: (valid) => Number(valid),
-      countInstock: (valid) => Number(valid),
-      rating: (valid) => valid,
-      description: (valid) => valid,
-    };
-
-    // const newProduct = await Product.create({
-    //   name: "Văn hóa",
-    //   image: "https://example.com/image.jpg",
-    //   categories: 1,
-    //   price: 23000,
-    //   price_old: 25000,
-    //   countInstock: 10,
-    //   rating: 4.5,
-    //   description: "Sản phẩm mới",
-    // });
-    for (const item in validations) {
-      console.log("validations[item]", req.body[item]);
-      if (!validations[item](req.body[item])) {
-        return res
-          .status(401)
-          .json({ message: `${item} thiếu hoặc sai định dạng` });
-      }
-    }
-    console.log("Product  lưu:", newProduct);
-
-    await newProduct.save();
-    res.status(201).json({ success: true, product: newProduct });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const addCart = async (req, res, next) => {
-  try {
-    const { id } = req.body;
-    if (!id) {
-      return res.status(401).json({ success: false, message: "Không có id" });
-    }
-    const itemProduct = await Product.findById(id);
-    console.log("itemProduct", itemProduct);
-
-    let listCart = [];
-
-    listCart.push(itemProduct);
-    console.log(listCart)
-    res.status(200).json({ success: true, listProduct: listCart });
-  } catch (error) {
-    next(error);
-  }
-};
 export const productController = {
   createProduct,
   updateProduct,
@@ -281,6 +224,4 @@ export const productController = {
   createCate,
   deleteCate,
   deleteAllCate,
-  testProduct,
-  addCart,
 };

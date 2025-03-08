@@ -1,11 +1,10 @@
 import mongoose from "mongoose";
 import removeVietnameseTones from "~/utils/removeVietnameseTones";
 
-// Định nghĩa schema cho người dùng
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true },
-    image: { type: String, required: true },
+    image: [{ type: mongoose.Schema.Types.Mixed, required: true }], // Chấp nhận bất kỳ object nào
     categories: { type: Number, required: true },
     slugName: { type: String, required: false, index: true },
     price: { type: Number, required: true },
@@ -19,8 +18,6 @@ const productSchema = new mongoose.Schema(
   }
 );
 productSchema.pre("save", async function (next) {
-  console.log("Middleware pre('save') được gọi:", this.name);
-
   if (this.isModified("name") || this.isNew) {
     let baseSlug = removeVietnameseTones(this.name)
       .trim()
@@ -41,7 +38,6 @@ productSchema.pre("save", async function (next) {
   }
   next();
 });
-
 
 const Product = mongoose.model("Product", productSchema);
 export default Product;

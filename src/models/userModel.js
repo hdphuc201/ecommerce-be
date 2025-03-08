@@ -1,6 +1,14 @@
 import mongoose from "mongoose";
 
 // Định nghĩa schema cho người dùng
+
+const addressSchema = new mongoose.Schema({
+  houseNumber: { type: String, required: true },
+  district: { type: String, required: true },
+  city: { type: String, required: true },
+  defaultAddress: { type: Boolean, default: false }, // Mặc định là false
+});
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -9,7 +17,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     isAdmin: { type: Boolean, default: false },
     avatar: { type: String },
-    address: { type: String },
+    address: [addressSchema],
   },
   { timestamps: true }
 );

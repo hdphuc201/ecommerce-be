@@ -11,16 +11,13 @@ import { env } from "./config/environment";
 import { Router } from "./routes";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { corsOptions } from "./config/cors";
 
 const START_SERVER = () => {
   const app = express();
   // Cho phép tất cả domain truy cập API (⚠️ Không an toàn cho production)
-  app.use(
-    cors({
-      origin: "http://localhost:3000", // ⚠️ Thay bằng URL của FE // Hoặc thêm chính xác FE: "http://localhost:3000"
-      credentials: true, // Bắt buộc nếu gửi cookie từ FE
-    })
-  );
+  app.use(cors(corsOptions));
+
   app.use(express.json({ limit: "5mb" })); // Cho phép JSON tối đa 5MB
   app.use(express.urlencoded({ extended: true, limit: "5mb" })); // Xử lý form-urlencoded
 
