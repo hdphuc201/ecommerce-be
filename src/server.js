@@ -29,11 +29,21 @@ const START_SERVER = () => {
     res.end("<h1>Hello World!</h1><hr>");
   });
 
-  app.listen(env.APP_PORT, env.APP_HOST, () => {
-    console.log(
-      `Hello Duy Dev, I am running at ${env.APP_HOST}:${env.APP_PORT}/`
-    );
-  });
+  // Môi trường production cụ thể là render.com
+  if (env.BUILD_MODE === "production") {
+    // render sẽ tự sinh ra PORT, kh cần chỉ định
+    app.listen(process.env.PORT, () => {
+      console.log(
+        `3. Production: Hello Duy Dev, I am running at Port: ${process.env.PORT}`
+      );
+    });
+  } else {
+    app.listen(env.LOCAL_DEV_APP_PORT, env.LOCAL_DEV_APP_HOST, () => {
+      console.log(
+        `3. Dev: Hello Duy Dev, I am running at ${env.LOCAL_DEV_APP_HOST}:${env.LOCAL_DEV_APP_PORT}/`
+      );
+    });
+  }
 
   exitHook(() => {
     console.log("Server is shutting down...");

@@ -1,8 +1,10 @@
+import "dotenv/config";
+
 export const env = {
   MONGODB_URI: process.env.MONGODB_URI,
   DATABASE_NAME: process.env.DATABASE_NAME,
-  APP_HOST: process.env.APP_HOST || "0.0.0.0",
-  APP_PORT: process.env.PORT || 8017, // Sử dụng PORT thay vì APP_PORT
+  LOCAL_DEV_APP_HOST: process.env.LOCAL_DEV_APP_HOST,
+  LOCAL_DEV_APP_PORT: process.env.LOCAL_DEV_APP_PORT,
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
   BUILD_MODE: process.env.BUILD_MODE,
