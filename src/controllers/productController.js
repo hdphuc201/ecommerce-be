@@ -81,7 +81,7 @@ const getAllProduct = async (req, res, next) => {
       }
     }
     if (price && !isNaN(price))
-      filterConditions.price = { $gte: Number(price) };
+      filterConditions.price = { $lte: Number(price) };
     if (q) filterConditions.name = { $regex: new RegExp(q, "i") }; // i' là flag cho tìm kiếm không phân biệt hoa thường
     if (categories) {
       const categoriesValue = Number(categories);
