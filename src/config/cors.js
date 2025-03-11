@@ -12,7 +12,9 @@ export const corsOptions = {
     if (env.BUILD_MODE === "dev") {
       return callback(null, true);
     }
-
+    if (!origin) {
+      return callback(null, true);
+    }
     // Ngược lại thì hiện tại code chúng ta đang làm còn 1 TH là:
     // env.BUILD_MODE === 'production'
 

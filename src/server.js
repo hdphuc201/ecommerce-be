@@ -12,6 +12,7 @@ import { Router } from "./routes";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { corsOptions } from "./config/cors";
+import "dotenv/config";
 
 const START_SERVER = () => {
   const app = express();

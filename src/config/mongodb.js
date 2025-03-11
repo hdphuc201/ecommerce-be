@@ -7,6 +7,7 @@ export const CONNECT_DB = async () => {
       bufferCommands: false, // Tắt buffer tránh bị lỗi timeout
     });
   } catch (error) {
+    console.log(error);
     process.exit(1);
   }
 };
