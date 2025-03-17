@@ -56,7 +56,7 @@ const loginUser = async (req, res, next) => {
       }
     }
     const response = await userService.loginUser(req.body);
-    const { refresh_token, ...newResponse } = response;
+    const { refresh_token, access_token, ...newResponse } = response;
 
     res.cookie("refresh_token", refresh_token, {
       httpOnly: true, // Ngăn JavaScript truy cập cookie
@@ -64,10 +64,35 @@ const loginUser = async (req, res, next) => {
       sameSite: "strict", // Bảo vệ chống CSRF
     });
 
+    // lưu access token vào cookie là cách tốt nhất và an toàn nhất
+    res.cookie("access_token", access_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
+
     if (!response.success) {
       return res.status(400).json(newResponse); // Thêm return ở đây
     }
     return res.status(200).json(newResponse); // Thêm return ở đây
+  } catch (error) {
+    next(error);
+  }
+};
+
+const logoutUser = async (req, res, next) => {
+  try {
+    const redisClient = req.redisClient; // Lấy redis từ middleware
+    await redisClient.set(
+      `TOKEN_BLACKLIST_${req.user?._id}_${req.user?.jit}`,
+      "true",
+      {
+        EX: 60 * 60 * 24,
+      }
+    );
+    return res
+      .status(200)
+      .json({ success: true, message: "Đăng xuất thành công" }); // Thêm return ở đây
   } catch (error) {
     next(error);
   }
@@ -145,7 +170,11 @@ const createUser = async (req, res, next) => {
     }
 
     const newUser = await userService.createUser(req.body);
-
+    if (!newUser) {
+      return res
+        .status(400)
+        .json({ message: "Có lỗi xảy ra khi tạo người dùng" });
+    }
     return res.status(200).json(newUser);
   } catch (error) {
     next(error);
@@ -241,7 +270,6 @@ const getAddress = async (req, res, next) => {
 
     const user = await User.findById(id);
     const listAddress = user.address.map((item) => item);
-    console.log("listAddress", listAddress);
     if (!listAddress.length) {
       return res
         .status(401)
@@ -258,7 +286,6 @@ const createAddress = async (req, res, next) => {
   try {
     const id = req.user._id;
     const { houseNumber, district, city, defaultAddress } = req.body;
-    console.log("defaultAddress", defaultAddress);
 
     if (!id) {
       return res
@@ -372,9 +399,9 @@ const updateAddress = async (req, res, next) => {
     let itemAddress = user.address?.findIndex(
       (item) => item._id.toString() === addressId
     );
-    if (itemAddress === -1)
-      return res.status(400).json({ message: "Địa chỉ không có" });
-
+    if (itemAddress === -1) {
+      return res.status(404).json({ message: "Địa chỉ không tồn tại" });
+    }
     const updateAddress = {};
     if (houseNumber) updateAddress.houseNumber = houseNumber;
     if (district) updateAddress.district = district;
@@ -383,7 +410,6 @@ const updateAddress = async (req, res, next) => {
 
     user.address[itemAddress] = updateAddress;
     await user.save();
-    console.log("itemAddress", itemAddress);
 
     return res
       .status(200)
@@ -396,6 +422,7 @@ const updateAddress = async (req, res, next) => {
 export const userController = {
   registerUser,
   loginUser,
+  logoutUser,
   refreshToken,
   updateUser,
   getDetail,

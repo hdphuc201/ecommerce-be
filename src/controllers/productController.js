@@ -2,9 +2,6 @@ import Category from "~/models/categoryModel";
 import Product from "~/models/productModel";
 import { productService } from "~/services/productService";
 import removeVietnameseTones from "~/utils/removeVietnameseTones";
-import { bcrypt } from "bcrypt";
-import { jwt } from "jsonwebtoken";
-import Cart from "~/models/cartModel";
 
 const createProduct = async (req, res, next) => {
   if (!req.body.name) {
@@ -173,7 +170,6 @@ const getCate = async (req, res, next) => {
 const createCate = async (req, res, next) => {
   try {
     const category = req.body;
-    console.log("category", category);
     if (!category) return res.status(400).json({ message: "Chưa có danh mục" });
 
     const result = await productService.createCate(category);

@@ -18,7 +18,6 @@ const getOrderAdmin = async (req, res, next) => {
   try {
     const { id } = req.query;
     // const isArray = Array.isArray(id) ? id : [id];
-    console.log("isArray", id);
     const listOrder = await Order.find({ userId: id });
 
     if (listOrder) {
@@ -60,7 +59,6 @@ const createOrder = async (req, res, next) => {
       }
     }
 
-    console.log("orders", orders);
     const order = new Order(orders);
     const createdOrder = await order.save();
 
@@ -81,7 +79,6 @@ const createOrder = async (req, res, next) => {
         }
 
         const removedProduct = cart.listProduct.splice(productIndex, 1)[0];
-        console.log("removedProduct", removedProduct);
 
         cart.totalProduct -= 1;
         cart.subTotal -= removedProduct.quantity * removedProduct.price;

@@ -6,7 +6,6 @@ import ApiError from "~/utils/ApiError";
 // Cấu hình CORS Option trong dự án thực tế
 export const corsOptions = {
   origin: function (origin, callback) {
-    console.log("origin", origin);
     // nếu môi trường là local dev thì cho qua luôn
     // Update mới: khi chúng ta deploy dự án lên một Server Production thì sẽ sửa lại đoạn này thêm một chút nữa để phù hợp với từng môi trường production hoặc dev nhé.
     if (env.BUILD_MODE === "dev") {

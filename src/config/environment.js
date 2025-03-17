@@ -9,4 +9,5 @@ export const env = {
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
   BUILD_MODE: process.env.BUILD_MODE,
   AUTHOR: process.env.AUTHOR,
+  REDIS_URL: process.env.REDIS_URL,
 };

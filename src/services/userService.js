@@ -34,14 +34,17 @@ const loginUser = async (userLogin) => {
 
     const access_token = jwtService.generateAccessToken(checkUser);
     const refresh_token = jwtService.generateRefreshToken(checkUser);
-    const { password: _password, ...user } = checkUser
-      ? checkUser.toObject()
-      : {}; // Chuyển từ Mongoose Document sang object
+    // const { password: _password, ...user } = checkUser
+    //   ? checkUser.toObject()
+    //   : {}; // Chuyển từ Mongoose Document sang object
 
     return {
       success: true,
       message: "Đăng nhập thành công",
-      ...user,
+      email: checkUser.email,
+      name: checkUser.name,
+      isAdmin: checkUser.isAdmin,
+      _id: checkUser._id,
       access_token,
       refresh_token,
     };
@@ -76,6 +79,7 @@ const createUser = async (newUser) => {
 
 const getDetail = async (id) => {
   try {
+    console.log("id", id);
     const user = await User.findById(id, "-password");
     if (!user) {
       throw new Error("User không tồn tại");
