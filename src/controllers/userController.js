@@ -58,23 +58,47 @@ const loginUser = async (req, res, next) => {
     const response = await userService.loginUser(req.body);
     const { refresh_token, access_token, ...newResponse } = response;
 
-    res.cookie("refresh_token", refresh_token, {
-      httpOnly: true, // Ngăn JavaScript truy cập cookie
-      secure: true, // Chỉ gửi qua HTTPS
-      sameSite: "strict", // Bảo vệ chống CSRF
-    });
-
-    // lưu access token vào cookie là cách tốt nhất và an toàn nhất
-    res.cookie("access_token", access_token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-    });
-
     if (!response.success) {
-      return res.status(400).json(newResponse); // Thêm return ở đây
+      return res.status(400).json(newResponse);
     }
-    return res.status(200).json(newResponse); // Thêm return ở đây
+
+    // Set both cookies and wait for them to be set
+    try {
+      // Set refresh token
+      res.cookie("refresh_token", refresh_token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+      });
+
+      // Set access token
+      res.cookie("access_token", access_token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+      });
+
+      // Verify cookies were set by checking headers
+      const cookies = res.getHeader("Set-Cookie");
+      if (!cookies || cookies.length !== 2) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to save authentication tokens",
+        });
+      }
+
+      // If we get here, both cookies were successfully set
+      return res.status(200).json({
+        ...newResponse,
+        tokensSaved: true,
+      });
+    } catch (cookieError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to save authentication tokens",
+        error: cookieError.message,
+      });
+    }
   } catch (error) {
     next(error);
   }
@@ -90,6 +114,8 @@ const logoutUser = async (req, res, next) => {
         EX: 60 * 60 * 24,
       }
     );
+    res.clearCookie("refresh_token");
+    res.clearCookie("access_token");
     return res
       .status(200)
       .json({ success: true, message: "Đăng xuất thành công" }); // Thêm return ở đây

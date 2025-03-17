@@ -57,7 +57,7 @@ export const authMiddleware = async (req, res, next) => {
           res.cookie("access_token", newAccessToken, {
             httpOnly: true,
             secure: true,
-            sameSite: "strict",
+            sameSite: "none",
           });
 
           req.user = user;
