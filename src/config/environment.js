@@ -10,4 +10,6 @@ export const env = {
   BUILD_MODE: process.env.BUILD_MODE,
   AUTHOR: process.env.AUTHOR,
   REDIS_URL: process.env.REDIS_URL,
+  EMAIL_USER: process.env.EMAIL_USER,
+  EMAIL_PASS: process.env.EMAIL_PASS,
 };

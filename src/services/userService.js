@@ -79,7 +79,6 @@ const createUser = async (newUser) => {
 
 const getDetail = async (id) => {
   try {
-    console.log("id", id);
     const user = await User.findById(id, "-password");
     if (!user) {
       throw new Error("User không tồn tại");

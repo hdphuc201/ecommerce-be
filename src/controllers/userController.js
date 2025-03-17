@@ -2,10 +2,12 @@ import jwt from "jsonwebtoken";
 import { env } from "~/config/environment";
 import User from "~/models/userModel";
 import { userService } from "~/services/userService";
+import bcrypt from "bcrypt";
+import { sendVerificationEmail } from "~/config/sendVerificationEmail";
 
 const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, email, password, confirmPassword, code } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -29,15 +31,58 @@ const registerUser = async (req, res, next) => {
       }
     }
 
+    if (code && code === "") {
+      return res.status(400).json({ message: "Vui lòng nhập mã xác nhận" });
+    }
     if (password !== confirmPassword) {
       return res.status(400).json({ message: "Mật khẩu không trùng khớp" });
     }
 
-    const newUser = await userService.registerUser(req.body);
-
-    return res.status(200).json(newUser);
+    // Tạo mã xác thực
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+    const redisClient = req.redisClient;
+    await redisClient.setEx(`verify:${email}`, 600, verificationCode);
+    // Gửi email
+    await sendVerificationEmail(email, verificationCode);
+    res
+      .status(200)
+      .json({ success: true, message: "Mã xác thực đã được gửi đến email" });
   } catch (error) {
     next(error);
+  }
+};
+
+const verifyEmail = async (req, res) => {
+  const { email, code, password, name, isAdmin } = req.body;
+
+  const redisClient = req.redisClient;
+  // Lấy mã từ Redis
+  try {
+    const storedCode = await redisClient.get(`verify:${email}`);
+    if (!storedCode)
+      return res
+        .status(400)
+        .json({ verify: false, message: "Mã xác thực đã hết hạn" });
+    if (storedCode !== code)
+      return res.status(400).json({ message: "Mã xác thực không đúng" });
+
+    // Mã đúng => Tạo tài khoản
+    const hash = await bcrypt.hash(password, 10);
+    const newUser = new User({
+      name,
+      email,
+      password: hash,
+      isAdmin,
+    });
+    await newUser.save();
+    // Xóa mã khỏi Redis
+    await redisClient.del(`verify:${email}`);
+    res.status(200).json({ verify: true, message: "Đăng ký thành công" });
+  } catch (error) {
+    console.error("Error accessing Redis:", error);
+    return res.status(500).json({ message: "Lỗi hệ thống, thử lại sau." });
   }
 };
 
@@ -447,6 +492,7 @@ const updateAddress = async (req, res, next) => {
 
 export const userController = {
   registerUser,
+  verifyEmail,
   loginUser,
   logoutUser,
   refreshToken,

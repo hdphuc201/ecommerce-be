@@ -7,6 +7,7 @@ const Router = express.Router();
 // Route công khai: Không cần authMiddleware
 Router.post("/sign-up", userController.registerUser);
 Router.post("/sign-in", userController.loginUser);
+Router.post("/verify-email", userController.verifyEmail);
 Router.post("/sign-out", authMiddleware, userController.logoutUser);
 Router.post("/refresh-token", userController.refreshToken);
 
