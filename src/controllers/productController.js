@@ -96,7 +96,17 @@ const getAllProduct = async (req, res, next) => {
       filterConditions.price = { $lte: Number(price) };
     if (q) filterConditions.name = { $regex: new RegExp(q, "i") }; // i' là flag cho tìm kiếm không phân biệt hoa thường
     if (categories) {
+      console.log(
+        "kiểu dữ liệu đầu vào categories",
+        typeof categories,
+        categories
+      );
       const categoriesValue = Number(categories) || 0;
+      if (!isNaN(categoriesValue) && categoriesValue > 0) {
+        filterConditions.categories = categoriesValue;
+      } else {
+        console.warn(`Invalid categories value: ${categories}`);
+      }
       console.log(
         "Kiểu dữ liệu của categories",
         typeof categoriesValue,
