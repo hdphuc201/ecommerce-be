@@ -112,14 +112,14 @@ const loginUser = async (req, res, next) => {
       res.cookie("refresh_token", refresh_token, {
         httpOnly: true, // Bảo vệ cookie, không cho JavaScript đọc
         secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
-        sameSite: "none",
+        sameSite: "None",
       });
 
       // Set access token
       res.cookie("access_token", access_token, {
         httpOnly: true,
         secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
-        sameSite: "none",
+        sameSite: "None",
       });
 
       // Verify cookies were set by checking headers

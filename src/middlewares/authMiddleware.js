@@ -60,7 +60,7 @@ export const authMiddleware = async (req, res, next) => {
           res.cookie("access_token", newAccessToken, {
             httpOnly: true,
             secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
-            sameSite: "none",
+            sameSite: "None",
           });
 
           req.user = user;
