@@ -19,10 +19,8 @@ Router.put(
   upload.single("avatar"),
   userController.updateUser
 );
-// Router.get("/get-detail/:id", authMiddleware, userController.getDetail);
-// Router.get("/getall", authMiddleware, isAdmin, userController.getAllUser);
-Router.get("/get-detail/:id", userController.getDetail);
-Router.get("/getall", userController.getAllUser);
+Router.get("/get-detail/:id", authMiddleware, userController.getDetail);
+Router.get("/getall", authMiddleware, isAdmin, userController.getAllUser);
 Router.delete(
   "/delete-user",
   authMiddleware,
