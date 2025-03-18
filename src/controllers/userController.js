@@ -81,7 +81,6 @@ const verifyEmail = async (req, res) => {
     await redisClient.del(`verify:${email}`);
     res.status(200).json({ verify: true, message: "Đăng ký thành công" });
   } catch (error) {
-    console.error("Error accessing Redis:", error);
     return res.status(500).json({ message: "Lỗi hệ thống, thử lại sau." });
   }
 };
@@ -111,16 +110,18 @@ const loginUser = async (req, res, next) => {
     try {
       // Set refresh token
       res.cookie("refresh_token", refresh_token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        httpOnly: true, // Bảo vệ cookie, không cho JavaScript đọc
+        secure: env.BUILD_MODE === "production", // Chỉ bật Secure nếu chạy trên HTTPS
+        sameSite: env.BUILD_MODE === "production" ? "none" : "lax", // Nếu chạy HTTP thì phải để 'lax'
+        path: "/",
       });
 
       // Set access token
       res.cookie("access_token", access_token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: env.BUILD_MODE === "production", // Chỉ bật Secure nếu chạy trên HTTPS
+        sameSite: env.BUILD_MODE === "production" ? "none" : "lax", // Nếu chạy HTTP thì phải để 'lax'
+        path: "/",
       });
 
       // Verify cookies were set by checking headers
@@ -130,13 +131,13 @@ const loginUser = async (req, res, next) => {
           success: false,
           message: "Failed to save authentication tokens",
         });
+      } else {
+        // If we get here, both cookies were successfully set
+        return res.status(200).json({
+          ...newResponse,
+          tokensSaved: true,
+        });
       }
-
-      // If we get here, both cookies were successfully set
-      return res.status(200).json({
-        ...newResponse,
-        tokensSaved: true,
-      });
     } catch (cookieError) {
       return res.status(500).json({
         success: false,

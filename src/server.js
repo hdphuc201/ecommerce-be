@@ -35,6 +35,12 @@ const START_SERVER = () => {
     res.end("<h1>Hello World!</h1><hr>");
   });
 
+  app.use((req, res, next) => {
+    console.log("Headers:", req.headers);
+    console.log("Cookies:", req.cookies);
+    next();
+  });
+
   // Môi trường production cụ thể là render.com
   if (env.BUILD_MODE === "production") {
     // render sẽ tự sinh ra PORT, kh cần chỉ định

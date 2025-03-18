@@ -25,7 +25,9 @@ import { jwtService } from "~/services/jwtService";
 
 export const authMiddleware = async (req, res, next) => {
   try {
-    const token = req?.cookies?.access_token;
+    const token = req.cookies?.access_token;
+    console.log("Token lấy từ cookie:", token);
+    console.log("Raw Cookies Header:", req.headers.cookie);
 
     if (!token) {
       res.status(401).json({ message: "Unauthorized - No tokens found" });
@@ -35,6 +37,7 @@ export const authMiddleware = async (req, res, next) => {
     jwt.verify(token, env.ACCESS_TOKEN_SECRET, async (err, user) => {
       if (err) {
         const refreshToken = req.cookies?.refresh_token;
+        console.log("refreshToken", refreshToken);
         if (!refreshToken) {
           return res
             .status(401)
@@ -56,7 +59,7 @@ export const authMiddleware = async (req, res, next) => {
           // Set new access token in response
           res.cookie("access_token", newAccessToken, {
             httpOnly: true,
-            secure: true,
+            secure: false,
             sameSite: "none",
           });
 

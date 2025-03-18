@@ -8,7 +8,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { _id: user._id, isAdmin: user.isAdmin, jit: uuidv4() }, // Payload đơn giản, an toàn
     env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "30s" } // Token hết hạn sau 3 giờ
+    { expiresIn: "7d" } // Token hết hạn sau 7 ngày
   );
 };
 
