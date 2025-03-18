@@ -111,17 +111,15 @@ const loginUser = async (req, res, next) => {
       // Set refresh token
       res.cookie("refresh_token", refresh_token, {
         httpOnly: true, // Bảo vệ cookie, không cho JavaScript đọc
-        secure: env.BUILD_MODE === "production", // Chỉ bật Secure nếu chạy trên HTTPS
-        sameSite: env.BUILD_MODE === "production" ? "none" : "lax", // Nếu chạy HTTP thì phải để 'lax'
-        path: "/",
+        secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
+        sameSite: "none",
       });
 
       // Set access token
       res.cookie("access_token", access_token, {
         httpOnly: true,
-        secure: env.BUILD_MODE === "production", // Chỉ bật Secure nếu chạy trên HTTPS
-        sameSite: env.BUILD_MODE === "production" ? "none" : "lax", // Nếu chạy HTTP thì phải để 'lax'
-        path: "/",
+        secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
+        sameSite: "none",
       });
 
       // Verify cookies were set by checking headers
