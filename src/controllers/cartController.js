@@ -20,7 +20,7 @@ const getCart = async (req, res) => {
 // Thêm sản phẩm vào giỏ hàng
 const addCart = async (req, res) => {
   try {
-    const { productId, name, price, quantity, image } = req.body;
+    const { productId, name, price, quantity, image, countInstock } = req.body;
     const userId = req.user._id;
     let cart = await Cart.findOne({ userId });
 
@@ -39,7 +39,14 @@ const addCart = async (req, res) => {
     if (existingProduct) {
       existingProduct.quantity += quantity;
     } else {
-      cart.listProduct.push({ productId, name, price, quantity, image });
+      cart.listProduct.push({
+        productId,
+        name,
+        price,
+        quantity,
+        image,
+        countInstock,
+      });
     }
     cart.totalProduct = cart?.listProduct.length;
     cart.subTotal += price * quantity;

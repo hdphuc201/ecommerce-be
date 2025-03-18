@@ -27,7 +27,7 @@ const getOrderAdmin = async (req, res, next) => {
     res.status(500).json(error);
   }
 };
-const applyDiscount = (subtotal, discountCode) => {
+const applyDiscount = (subtotal, discountCode, shippingFee) => {
   let discountAmount = 0;
 
   // Kiểm tra mã giảm giá và tính toán giảm giá
@@ -37,8 +37,8 @@ const applyDiscount = (subtotal, discountCode) => {
     discountAmount = (subtotal * 10) / 100; // Giảm giá 10%
   }
 
-  // Tính lại subtotal sau khi áp dụng giảm giá
-  const newSubtotal = subtotal - discountAmount;
+  // Đảm bảo rằng tổng tiền không âm
+  const newSubtotal = Math.max(0, subtotal - discountAmount) + shippingFee;
 
   return newSubtotal;
 };
@@ -47,16 +47,23 @@ const createOrder = async (req, res, next) => {
   try {
     const orders = req.body;
     const userId = req.user?._id;
+    const shippingFee = orders.shippingFee || 0; // Mặc định phí vận chuyển luôn có
 
     // Kiểm tra mã giảm giá (nếu có)
-    if (orders.discount) {
+    if (orders.discount || orders.shippingFee) {
       if (["GIAM30", "GIAM10"].includes(orders.discount)) {
         // Nếu mã giảm giá hợp lệ, áp dụng giảm giá
-        orders.subTotal = applyDiscount(orders.subTotal, orders.discount);
+        orders.subTotal = applyDiscount(
+          orders.subTotal,
+          orders.discount,
+          shippingFee
+        );
       } else {
         // Nếu mã giảm giá không hợp lệ
         return res.status(400).json({ message: "Mã giảm giá không hợp lệ" });
       }
+    } else {
+      orders.subTotal += shippingFee;
     }
 
     const order = new Order(orders);

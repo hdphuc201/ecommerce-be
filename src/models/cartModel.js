@@ -13,6 +13,7 @@ const cartSchema = new mongoose.Schema({
       price: { type: Number, required: true }, // Lưu giá tại thời điểm thêm vào giỏ hàng
       quantity: { type: Number, required: true, min: 1 },
       image: { type: String, required: true }, // Chỉ lưu URL ảnh chính
+      countInstock: { type: Number, required: true },
     },
   ],
   totalProduct: { type: Number, default: 0 }, // Tổng số lượng sản phẩm

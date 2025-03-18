@@ -21,6 +21,11 @@ Router.put(
   upload.single("image"),
   productController.updateProduct
 );
+Router.put(
+  "/update-stock",
+  authMiddleware,
+  productController.updateProductStock
+);
 Router.delete(
   "/delete-product",
   authMiddleware,

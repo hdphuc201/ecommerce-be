@@ -50,6 +50,21 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
+const updateProductStock = async (req, res, next) => {
+  try {
+    const { productId, quantityOrdered } = req.body;
+    const product = await Product.findById(productId);
+    if (!product) throw new Error("Sản phẩm không tồn tại");
+
+    product.countInstock -= quantityOrdered; // Trừ số lượng
+
+    await product.save();
+    return res.status(200).json({ message: "Cập nhật số lượng thành công" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getAllProduct = async (req, res, next) => {
   try {
     const { limit, page, sort, type, price, rating, q, categories } = req.query;
@@ -210,6 +225,7 @@ const deleteAllCate = async (req, res, next) => {
 export const productController = {
   createProduct,
   updateProduct,
+  updateProductStock,
   deleteProduct,
   searchProduct,
   getDetailProduct,
