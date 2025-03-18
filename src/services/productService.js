@@ -31,7 +31,7 @@ const updateProduct = async (form) => {
     const validations = {
       name: (valid) => valid,
       image: (valid) => valid,
-      categories: (valid) => valid,
+      categories: (valid) => Number(valid),
       price: (valid) => valid,
       price_old: (valid) => valid,
       countInstock: (valid) => valid,

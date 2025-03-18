@@ -5,7 +5,7 @@ const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true },
     image: [{ type: mongoose.Schema.Types.Mixed, required: true }], // Chấp nhận bất kỳ object nào
-    categories: { type: String, required: true },
+    categories: { type: Number, required: true },
     slugName: { type: String, required: false, index: true },
     price: { type: Number, required: true },
     price_old: { type: Number, required: true },

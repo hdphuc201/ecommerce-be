@@ -97,6 +97,11 @@ const getAllProduct = async (req, res, next) => {
     if (q) filterConditions.name = { $regex: new RegExp(q, "i") }; // i' là flag cho tìm kiếm không phân biệt hoa thường
     if (categories) {
       const categoriesValue = Number(categories);
+      console.log(
+        "Kiểu dữ liệu của categories",
+        typeof categoriesValue,
+        categoriesValue
+      );
       if (!isNaN(categoriesValue)) {
         filterConditions.categories = { $eq: Number(categories) };
       } else {
