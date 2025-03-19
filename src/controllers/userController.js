@@ -124,12 +124,15 @@ const loginUser = async (req, res, next) => {
 
       // Verify cookies were set by checking headers
       const cookies = res.getHeader("Set-Cookie");
+      console.log("cookies lấy từ Header", cookies);
       if (!cookies || cookies.length !== 2) {
+        console.log("cookies không được set");
         return res.status(500).json({
           success: false,
           message: "Failed to save authentication tokens",
         });
       } else {
+        console.log("cookies được set");
         // If we get here, both cookies were successfully set
         return res.status(200).json({
           ...newResponse,
@@ -137,6 +140,7 @@ const loginUser = async (req, res, next) => {
         });
       }
     } catch (cookieError) {
+      console.log("cookieError", cookieError);
       return res.status(500).json({
         success: false,
         message: "Failed to save authentication tokens",
