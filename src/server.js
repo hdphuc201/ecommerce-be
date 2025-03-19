@@ -18,7 +18,27 @@ import "dotenv/config";
 const START_SERVER = () => {
   const app = express();
   // Cho phép tất cả domain truy cập API (⚠️ Không an toàn cho production)
-  app.use(cors(corsOptions));
+  // app.use(cors(corsOptions));
+  app.use(
+    cors({
+      origin: "https://hdpstore.vercel.app", // ✅ Chỉ định đúng frontend, KHÔNG dùng "*"
+      credentials: true, // ✅ Quan trọng để trình duyệt gửi cookie
+    })
+  );
+
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Origin", "https://hdpstore.vercel.app"); // ✅ Phải giống với frontend
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, OPTIONS"
+    );
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    );
+    next();
+  });
 
   app.use(express.json({ limit: "5mb" })); // Cho phép JSON tối đa 5MB
   app.use(express.urlencoded({ extended: true, limit: "5mb" })); // Xử lý form-urlencoded
