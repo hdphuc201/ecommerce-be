@@ -41,12 +41,14 @@ const loginUser = async (userLogin) => {
     return {
       success: true,
       message: "Đăng nhập thành công",
-      email: checkUser.email,
-      name: checkUser.name,
-      isAdmin: checkUser.isAdmin,
-      _id: checkUser._id,
-      access_token,
-      refresh_token,
+      email: checkUser?.email,
+      name: checkUser?.name,
+      isAdmin: checkUser?.isAdmin,
+      _id: checkUser?._id,
+      token: {
+        access_token,
+        refresh_token,
+      },
     };
   } catch (error) {
     return { success: false, message: error.message || "Lỗi server" };

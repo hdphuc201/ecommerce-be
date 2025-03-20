@@ -100,53 +100,50 @@ const loginUser = async (req, res, next) => {
       }
     }
     const response = await userService.loginUser(req.body);
-    const { refresh_token, access_token, ...newResponse } = response;
 
     if (!response.success) {
-      return res.status(400).json(newResponse);
+      return res.status(400).json(response);
+    } else {
+      return res.status(200).json(response);
     }
 
-    // Set both cookies and wait for them to be set
-    try {
-      // Set refresh token
-      res.cookie("refresh_token", refresh_token, {
-        httpOnly: true, // Bảo vệ cookie, không cho JavaScript đọc
-        secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
-        sameSite: "None",
-      });
+    // // Set both cookies and wait for them to be set
+    // try {
+    //   // Set refresh token
+    //   res.cookie("refresh_token", refresh_token, {
+    //     httpOnly: true, // Bảo vệ cookie, không cho JavaScript đọc
+    //     secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
+    //     sameSite: "None",
+    //   });
 
-      // Set access token
-      res.cookie("access_token", access_token, {
-        httpOnly: true,
-        secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
-        sameSite: "None",
-      });
+    //   // Set access token
+    //   res.cookie("access_token", access_token, {
+    //     httpOnly: true,
+    //     secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
+    //     sameSite: "None",
+    //   });
 
-      // Verify cookies were set by checking headers
-      const cookies = res.getHeader("Set-Cookie");
-      console.log("cookies đã được set vào Header", cookies);
-      if (!cookies || cookies.length !== 2) {
-        console.log("cookies không được set");
-        return res.status(500).json({
-          success: false,
-          message: "Failed to save authentication tokens",
-        });
-      } else {
-        console.log("cookies được set");
-        // If we get here, both cookies were successfully set
-        return res.status(200).json({
-          ...newResponse,
-          tokensSaved: true,
-        });
-      }
-    } catch (cookieError) {
-      console.log("cookieError", cookieError);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to save authentication tokens",
-        error: cookieError.message,
-      });
-    }
+    //   // Verify cookies were set by checking headers
+    //   const cookies = res.getHeader("Set-Cookie");
+    //   if (!cookies || cookies.length !== 2) {
+    //     return res.status(500).json({
+    //       success: false,
+    //       message: "Failed to save authentication tokens",
+    //     });
+    //   } else {
+    //     // If we get here, both cookies were successfully set
+    //     return res.status(200).json({
+    //       ...newResponse,
+    //       tokensSaved: true,
+    //     });
+    //   }
+    // } catch (cookieError) {
+    //   return res.status(500).json({
+    //     success: false,
+    //     message: "Failed to save authentication tokens",
+    //     error: cookieError.message,
+    //   });
+    // }
   } catch (error) {
     next(error);
   }
@@ -173,9 +170,8 @@ const logoutUser = async (req, res, next) => {
 };
 
 const refreshToken = async (req, res, next) => {
+  const { refreshToken } = req.body;
   try {
-    const refreshToken = req?.cookies?.refresh_token;
-
     if (!refreshToken) {
       return res
         .status(401)
