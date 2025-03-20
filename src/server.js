@@ -28,7 +28,7 @@ const START_SERVER = () => {
 
   app.use((req, res, next) => {
     res.header("Access-Control-Allow-Credentials", "true");
-    res.header("Access-Control-Allow-Origin", "https://hdpstore.vercel.app/"); // ✅ Phải giống với frontend
+    res.header("Access-Control-Allow-Origin", "https://hdpstore.vercel.app"); // ✅ Phải giống với frontend
     res.header(
       "Access-Control-Allow-Methods",
       "GET, POST, PUT, DELETE, OPTIONS"
