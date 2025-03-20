@@ -113,6 +113,7 @@ const loginUser = async (req, res, next) => {
         httpOnly: true, // Bảo vệ cookie, không cho JavaScript đọc
         secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
         sameSite: "None",
+        domain: ".hdpstore.vercel.app", // ✅ Chia sẻ giữa BE & FE
       });
 
       // Set access token
@@ -120,6 +121,7 @@ const loginUser = async (req, res, next) => {
         httpOnly: true,
         secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
         sameSite: "None",
+        domain: ".hdpstore.vercel.app", // ✅ Chia sẻ giữa BE & FE
       });
 
       // Verify cookies were set by checking headers

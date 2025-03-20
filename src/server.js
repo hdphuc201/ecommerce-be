@@ -21,7 +21,7 @@ const START_SERVER = () => {
   // app.use(cors(corsOptions));
   app.use(
     cors({
-      origin: "https://hdpstore.vercel.app/", // ✅ Chỉ định đúng frontend, KHÔNG dùng "*"
+      origin: "https://hdpstore.vercel.app", // ✅ Chỉ định đúng frontend, KHÔNG dùng "*"
       credentials: true, // ✅ Quan trọng để trình duyệt gửi cookie
     })
   );
