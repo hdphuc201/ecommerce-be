@@ -60,7 +60,6 @@ export const authMiddleware = async (req, res, next) => {
             httpOnly: true,
             secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
             sameSite: "None",
-            domain: "https://hdpstore.vercel.app/", // ✅ Chia sẻ giữa BE & FE
           });
 
           req.user = user;
