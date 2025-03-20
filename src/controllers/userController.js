@@ -124,7 +124,7 @@ const loginUser = async (req, res, next) => {
 
       // Verify cookies were set by checking headers
       const cookies = res.getHeader("Set-Cookie");
-      console.log("cookies lấy từ Header", cookies);
+      console.log("cookies đã được set vào Header", cookies);
       if (!cookies || cookies.length !== 2) {
         console.log("cookies không được set");
         return res.status(500).json({
