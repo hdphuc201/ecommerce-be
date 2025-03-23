@@ -1,5 +1,8 @@
+import mongoose from "mongoose";
+import { sendInforOrderEmail, sendVerificationEmail } from "~/config/sendEmail";
 import Cart from "~/models/cartModel";
 import Order from "~/models/orderModel";
+import User from "~/models/userModel";
 
 const getOrder = async (req, res, next) => {
   try {
@@ -45,8 +48,47 @@ const applyDiscount = (subtotal, discountCode, shippingFee) => {
 
 const createOrder = async (req, res, next) => {
   try {
-    const orders = req.body;
-    const userId = req.user?._id;
+    const { name, email, phone, ...orders } = req.body;
+    let userId = orders?.userId || null;
+
+    if (!orders.shippingAddress) {
+      return res.status(400).json({
+        success: false,
+        message: "Cập nhật địa chỉ",
+      });
+    }
+
+    if (userId === null) {
+      const validators = {
+        name: (val) => typeof val === "string" && val.trim() !== "",
+        email: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+        phone: (val) => /^\d{10}$/.test(val),
+      };
+
+      for (const field in validators) {
+        if (!validators[field](req.body[field])) {
+          return res.status(400).json({
+            success: false,
+            message: `${field} không hợp lệ hoặc thiếu`,
+          });
+        }
+      }
+
+      const checkUser = await User.findOne({ email });
+      if (!checkUser) {
+        const createUser = await User.create({ name, email, phone });
+        userId = createUser._id;
+      } else {
+        userId = checkUser._id;
+      }
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User ID không hợp lệ" });
+    }
+    orders.userId = userId;
     const shippingFee = orders.shippingFee || 0; // Mặc định phí vận chuyển luôn có
 
     // Kiểm tra mã giảm giá (nếu có)
@@ -66,39 +108,45 @@ const createOrder = async (req, res, next) => {
       orders.subTotal += shippingFee;
     }
 
+    // ✅ Lưu đơn hàng vào database
     const order = new Order(orders);
     const createdOrder = await order.save();
 
-    const cart = await Cart.findOne({ userId: userId });
-    if (createdOrder) {
-      const listProductOrderd = createdOrder.orderItems.map((item) =>
+    // ✅ Kiểm tra giỏ hàng có tồn tại không
+    const cart = await Cart.findOne({ userId: orders?.userId });
+
+    if (cart) {
+      // Nếu có giỏ hàng → Cập nhật giỏ hàng
+      const listProductOrderd = createdOrder?.orderItems.map((item) =>
         item._id.toString()
       );
 
       for (const productId of listProductOrderd) {
         const productIndex = cart?.listProduct.findIndex(
-          (product) => product?._id.toString() === productId
+          (product) => product?._id?.toString() === productId.toString()
         );
-        if (productIndex === -1) {
-          return res
-            .status(400)
-            .json({ message: "Sản phẩm không có trong giỏ hàng" });
+
+        if (productIndex !== -1) {
+          const removedProduct = cart.listProduct.splice(productIndex, 1)[0];
+          cart.totalProduct -= 1;
+          cart.subTotal -= removedProduct.quantity * removedProduct.price;
         }
-
-        const removedProduct = cart.listProduct.splice(productIndex, 1)[0];
-
-        cart.totalProduct -= 1;
-        cart.subTotal -= removedProduct.quantity * removedProduct.price;
       }
-
       await cart.save();
-
-      return res
-        .status(201)
-        .json({ success: true, message: "Đặt hàng thành công", createdOrder });
     }
+
+    // ✅ Gửi email xác nhận
+    await sendInforOrderEmail(email, createdOrder);
+
+    return res.status(200).json({
+      success: true,
+      message: `Đặt hàng thành công${
+        !req.body._id ? ", theo dõi đơn hàng qua Email " : ""
+      }`,
+      createdOrder,
+    });
   } catch (error) {
-    next(error);
+    return res.status(500).json(error);
   }
 };
 

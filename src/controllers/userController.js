@@ -3,7 +3,9 @@ import { env } from "~/config/environment";
 import User from "~/models/userModel";
 import { userService } from "~/services/userService";
 import bcrypt from "bcrypt";
-import { sendVerificationEmail } from "~/config/sendVerificationEmail";
+import { sendVerificationEmail } from "~/config/sendEmail";
+import { OAuth2Client } from "google-auth-library";
+import { jwtService } from "~/services/jwtService";
 
 const registerUser = async (req, res, next) => {
   try {
@@ -146,6 +148,48 @@ const loginUser = async (req, res, next) => {
     // }
   } catch (error) {
     next(error);
+  }
+};
+const loginGoogle = async (req, res, next) => {
+  const { token } = req.body;
+  const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+  try {
+    if (!token) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Token không hợp lệ" });
+    }
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+
+    const { sub, name, email, picture } = ticket.getPayload();
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({ googleId: sub, name, email, avatar: picture });
+    }
+
+    const access_token = jwtService.generateAccessToken(user);
+    const refresh_token = jwtService.generateRefreshToken(user);
+
+    res.json({
+      success: true,
+      message: "Đăng nhập thành công",
+      email: user?.email,
+      name: user?.name,
+      isAdmin: user?.isAdmin,
+      avatar: user?.avatar,
+      _id: user?._id,
+      token: {
+        access_token,
+        refresh_token,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error });
   }
 };
 
@@ -399,9 +443,6 @@ const createAddress = async (req, res, next) => {
         .status(200)
         .json({ success: true, message: "Tạo địa chỉ thành công", userUpdate });
     }
-    // const result = await user
-
-    // if (!result.success) return res.status(400).json(result);
   } catch (error) {
     next(error);
   }
@@ -493,6 +534,7 @@ export const userController = {
   registerUser,
   verifyEmail,
   loginUser,
+  loginGoogle,
   logoutUser,
   refreshToken,
   updateUser,

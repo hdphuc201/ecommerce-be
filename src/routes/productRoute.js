@@ -23,7 +23,7 @@ Router.put(
 );
 Router.put(
   "/update-stock",
-  authMiddleware,
+  // authMiddleware,
   productController.updateProductStock
 );
 Router.delete(

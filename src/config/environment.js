@@ -12,4 +12,5 @@ export const env = {
   REDIS_URL: process.env.REDIS_URL,
   EMAIL_USER: process.env.EMAIL_USER,
   EMAIL_PASS: process.env.EMAIL_PASS,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 };
