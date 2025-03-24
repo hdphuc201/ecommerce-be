@@ -166,6 +166,7 @@ const loginGoogle = async (req, res, next) => {
     });
 
     const { sub, name, email, picture } = ticket.getPayload();
+    console.log("picture", picture);
     let user = await User.findOne({ email });
 
     if (!user) {
@@ -175,13 +176,14 @@ const loginGoogle = async (req, res, next) => {
     const access_token = jwtService.generateAccessToken(user);
     const refresh_token = jwtService.generateRefreshToken(user);
 
+    console.log("user", user);
     res.json({
       success: true,
       message: "Đăng nhập thành công",
       email: user?.email,
       name: user?.name,
       isAdmin: user?.isAdmin,
-      avatar: user?.avatar,
+      avatar: user?.avatar || picture,
       _id: user?._id,
       token: {
         access_token,
