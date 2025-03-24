@@ -43,6 +43,7 @@ const loginUser = async (userLogin) => {
       message: "Đăng nhập thành công",
       email: checkUser?.email,
       name: checkUser?.name,
+      avatar: checkUser?.avatar,
       isAdmin: checkUser?.isAdmin,
       _id: checkUser?._id,
       token: {
