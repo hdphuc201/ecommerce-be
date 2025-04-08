@@ -1,7 +1,7 @@
 import express from "express";
 import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware"; // Import authMiddleware
 import { userController } from "~/controllers/userController";
-import { upload } from "~/config/Mullter";
+import { uploadUser } from "~/config/mullter";
 const Router = express.Router();
 
 // Route công khai: Không cần authMiddleware
@@ -13,11 +13,11 @@ Router.post("/sign-out", authMiddleware, userController.logoutUser);
 Router.post("/refresh-token", userController.refreshToken);
 
 // Route cần xác thực: Cần authMiddleware để đảm bảo người dùng đã đăng nhập
-Router.post("/create", upload.single("avatar"), userController.createUser);
+Router.post("/create", uploadUser.single("avatar"), userController.createUser);
 Router.put(
   "/update-user",
   authMiddleware,
-  upload.single("avatar"),
+  uploadUser.single("avatar"),
   userController.updateUser
 );
 Router.get("/get-detail/:id", authMiddleware, userController.getDetail);

@@ -1,6 +1,7 @@
 import User from "~/models/userModel";
 import bcrypt from "bcrypt";
 import { jwtService } from "./jwtService";
+import { env } from "~/config/environment";
 
 const registerUser = async (newUser) => {
   try {
@@ -23,38 +24,34 @@ const registerUser = async (newUser) => {
     throw new Error(error);
   }
 };
-const loginUser = async (userLogin) => {
+const loginUser = async ({ email, password }) => {
   try {
-    const { email, password } = userLogin;
-    let checkUser = await User.findOne({ email });
-    if (!checkUser) throw new Error("Email không tồn tại");
+    const user = await User.findOne({ email });
+    if (!user) throw new Error("Email không tồn tại");
 
-    const checkPass = await bcrypt.compare(password, checkUser.password);
-    if (!checkPass) throw new Error("Mật khẩu không đúng");
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) throw new Error("Mật khẩu không đúng");
 
-    const access_token = jwtService.generateAccessToken(checkUser);
-    const refresh_token = jwtService.generateRefreshToken(checkUser);
-    // const { password: _password, ...user } = checkUser
-    //   ? checkUser.toObject()
-    //   : {}; // Chuyển từ Mongoose Document sang object
+    const access_token = jwtService.generateAccessToken(user);
+    const refresh_token = jwtService.generateRefreshToken(user);
 
     return {
       success: true,
       message: "Đăng nhập thành công",
-      email: checkUser?.email,
-      name: checkUser?.name,
-      avatar: checkUser?.avatar,
-      isAdmin: checkUser?.isAdmin,
-      _id: checkUser?._id,
-      token: {
-        access_token,
-        refresh_token,
-      },
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      isAdmin: user.isAdmin,
+      _id: user._id,
+      ...(env.COOKIE_MODE
+        ? { checkUser: user }
+        : { token: { access_token, refresh_token } }),
     };
   } catch (error) {
     return { success: false, message: error.message || "Lỗi server" };
   }
 };
+
 
 const createUser = async (newUser) => {
   try {

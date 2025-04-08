@@ -1,9 +1,9 @@
 import Category from "~/models/categoryModel";
 import Product from "~/models/productModel";
 
-const createProduct = async (newProduct) => {
+const createProduct = async (newProduct, imagePaths) => {
   try {
-    const { name, image } = newProduct;
+    const { name, } = newProduct;
     const checkProduct = await Product.findOne({ name });
     if (checkProduct !== null) {
       return {
@@ -11,7 +11,7 @@ const createProduct = async (newProduct) => {
         message: "Tên sản phẩm đã tồn tại",
       };
     }
-    const _newProduct = { ...newProduct, image };
+    const _newProduct = { ...newProduct, image: imagePaths || [] };
 
     const createProduct = await Product.create(_newProduct);
     return {
@@ -27,10 +27,9 @@ const createProduct = async (newProduct) => {
 const updateProduct = async (form) => {
   try {
     const { _id } = form;
-
     const validations = {
       name: (valid) => valid,
-      image: (valid) => valid,
+      image: (valid) => Array.isArray(valid), // hoặc valid.length > 0 nếu bắt buộc
       categories: (valid) => Number(valid),
       price: (valid) => valid,
       price_old: (valid) => valid,

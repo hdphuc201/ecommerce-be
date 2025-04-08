@@ -1,5 +1,5 @@
 import express from "express";
-import { upload } from "~/config/Mullter";
+import { uploadProduct } from "~/config/mullter";
 import { productController } from "~/controllers/productController";
 import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware";
 
@@ -10,7 +10,7 @@ Router.post(
   "/create-product",
   authMiddleware,
   isAdmin,
-  upload.array("image", 12),
+  uploadProduct.array("image", 12),
   productController.createProduct
 );
 
@@ -18,7 +18,7 @@ Router.put(
   "/update-product",
   authMiddleware,
   isAdmin,
-  upload.single("image"),
+  uploadProduct.array("image"),
   productController.updateProduct
 );
 Router.put(

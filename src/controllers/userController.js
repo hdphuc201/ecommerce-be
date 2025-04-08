@@ -9,7 +9,7 @@ import { jwtService } from "~/services/jwtService";
 
 const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password, confirmPassword, code } = req.body;
+    const { email, password, confirmPassword, code } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -89,75 +89,71 @@ const verifyEmail = async (req, res) => {
 
 const loginUser = async (req, res, next) => {
   try {
-    const validators = {
-      email: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
-      password: (val) => val,
-    };
+    const { email, password } = req.body;
 
-    for (const filed in validators) {
-      if (!validators[filed](req.body[filed])) {
-        return res
-          .status(400)
-          .json({ message: `${filed} không hợp lệ hoặc thiếu` });
-      }
-    }
+    // Validate đầu vào
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return res.status(400).json({ message: "Email không hợp lệ hoặc thiếu" });
+
+    if (!password)
+      return res.status(400).json({ message: "Password không được bỏ trống" });
+
+    // Gọi service xử lý
     const response = await userService.loginUser(req.body);
 
     if (!response.success) {
       return res.status(400).json(response);
-    } else {
-      return res.status(200).json(response);
     }
 
-    // // Set both cookies and wait for them to be set
-    // try {
-    //   // Set refresh token
-    //   res.cookie("refresh_token", refresh_token, {
-    //     httpOnly: true, // Bảo vệ cookie, không cho JavaScript đọc
-    //     secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
-    //     sameSite: "None",
-    //   });
+    // Nếu dùng cookie mode
+    if (env.COOKIE_MODE) {
+      const { checkUser } = response;
 
-    //   // Set access token
-    //   res.cookie("access_token", access_token, {
-    //     httpOnly: true,
-    //     secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
-    //     sameSite: "None",
-    //   });
+      const access_token = jwtService.generateAccessToken(checkUser);
+      const refresh_token = jwtService.generateRefreshToken(checkUser);
 
-    //   // Verify cookies were set by checking headers
-    //   const cookies = res.getHeader("Set-Cookie");
-    //   if (!cookies || cookies.length !== 2) {
-    //     return res.status(500).json({
-    //       success: false,
-    //       message: "Failed to save authentication tokens",
-    //     });
-    //   } else {
-    //     // If we get here, both cookies were successfully set
-    //     return res.status(200).json({
-    //       ...newResponse,
-    //       tokensSaved: true,
-    //     });
-    //   }
-    // } catch (cookieError) {
-    //   return res.status(500).json({
-    //     success: false,
-    //     message: "Failed to save authentication tokens",
-    //     error: cookieError.message,
-    //   });
-    // }
+      // Gán cookies
+      res.cookie("refresh_token", refresh_token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+      });
+
+      res.cookie("access_token", access_token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+      });
+
+      // Xóa token trong response nếu dùng cookie
+      delete response.token;
+    } else {
+      // xóa hoàn toàn token khỏi cookie nếu lưu ở local
+      res.clearCookie("refresh_token");
+      res.clearCookie("access_token");
+    }
+
+
+    return res.status(200).json({
+      ...response,
+      modeCookie: env.COOKIE_MODE,
+    });
   } catch (error) {
     next(error);
   }
 };
+
+
 const loginGoogle = async (req, res, next) => {
   const { token } = req.body;
   const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+
   try {
     if (!token) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Token không hợp lệ" });
+      return res.status(400).json({
+        success: false,
+        message: "Token không hợp lệ",
+      });
     }
 
     const ticket = await client.verifyIdToken({
@@ -169,13 +165,37 @@ const loginGoogle = async (req, res, next) => {
     let user = await User.findOne({ email });
 
     if (!user) {
-      user = await User.create({ googleId: sub, name, email, avatar: picture });
+      user = await User.create({
+        googleId: sub,
+        name,
+        email,
+        avatar: picture,
+      });
     }
 
     const access_token = jwtService.generateAccessToken(user);
     const refresh_token = jwtService.generateRefreshToken(user);
 
-    res.json({
+    // Nếu dùng cookie mode
+    if (env.COOKIE_MODE) {
+      res.cookie("refresh_token", refresh_token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+      });
+
+      res.cookie("access_token", access_token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+      });
+    } else {
+      // Nếu KHÔNG dùng cookie => clear hết token cũ (nếu có)
+      res.clearCookie("refresh_token");
+      res.clearCookie("access_token");
+    }
+
+    return res.status(200).json({
       success: true,
       message: "Đăng nhập thành công",
       email: user?.email,
@@ -183,13 +203,21 @@ const loginGoogle = async (req, res, next) => {
       isAdmin: user?.isAdmin,
       avatar: user?.avatar || picture,
       _id: user?._id,
-      token: {
-        access_token,
-        refresh_token,
-      },
+      ...(env.COOKIE_MODE
+        ? {} // không gửi token nếu dùng cookie
+        : {
+          token: {
+            access_token,
+            refresh_token,
+          },
+        }),
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error });
+    console.error("Lỗi loginGoogle:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Lỗi server",
+    });
   }
 };
 
@@ -246,14 +274,9 @@ const refreshToken = async (req, res, next) => {
 const createUser = async (req, res, next) => {
   try {
     const {
-      avatar,
-      name,
       email,
-      phone,
       password,
       confirmPassword,
-      isAdmin,
-      address,
     } = req.body;
 
     const existingUser = await User.findOne({ email });

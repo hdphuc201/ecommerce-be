@@ -1,9 +1,4 @@
-/* eslint-disable no-console */
-/**
- * Updated by trungquandev.com's author on August 17 2023
- * YouTube: https://youtube.com/@trungquandev
- * "A bit of fragrance clings to the hand that gives flowers!"
- */
+
 import express from "express";
 import exitHook from "async-exit-hook";
 import { CONNECT_DB, ClOSE_DB } from "./config/mongodb";
@@ -14,11 +9,14 @@ import cookieParser from "cookie-parser";
 import { corsOptions } from "./config/cors";
 import { CLOSE_REDIS, CONNECT_REDIS, GET_REDIS_CLIENT } from "./config/redis";
 import "dotenv/config";
+import path from "path";
 
 const START_SERVER = () => {
   const app = express();
   // Cho phép tất cả domain truy cập API (⚠️ Không an toàn cho production)
   app.use(cors(corsOptions));
+
+  app.use("/uploads", express.static(path.resolve("uploads")));
 
   app.use(express.json({ limit: "5mb" })); // Cho phép JSON tối đa 5MB
   app.use(express.urlencoded({ extended: true, limit: "5mb" })); // Xử lý form-urlencoded
@@ -38,15 +36,16 @@ const START_SERVER = () => {
   // Môi trường production cụ thể là render.com
   if (env.BUILD_MODE === "production") {
     // render sẽ tự sinh ra PORT, kh cần chỉ định
-    app.listen(process.env.PORT, () => {
+    const port = process.env.PORT;
+    app.listen(port, () => {
       console.log(
-        `3. Production: Hello Duy Dev, I am running at Port: ${process.env.PORT}`
+        `3. Production: Hello Duy Dev, I am running at Port: ${port}`
       );
     });
   } else {
     app.listen(env.LOCAL_DEV_APP_PORT, env.LOCAL_DEV_APP_HOST, () => {
       console.log(
-        `3. Dev: Hello Duy Dev, I am running at ${env.LOCAL_DEV_APP_HOST}:${env.LOCAL_DEV_APP_PORT}/`
+        `3. Dev: Hello Duy Dev, I am running at ${env.LOCAL_DEV_APP_HOST}:${env.LOCAL_DEV_APP_PORT}`
       );
     });
   }

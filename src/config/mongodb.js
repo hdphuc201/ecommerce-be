@@ -27,13 +27,11 @@ export const CLOSE_DB = async () => {
 };
 // Đảm bảo đóng khi tắt app
 process.on("SIGINT", async () => {
-  console.log("SIGINT received, closing MongoDB connection...");
   await CLOSE_DB();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, closing MongoDB connection...");
   await CLOSE_DB();
   process.exit(0);
 });

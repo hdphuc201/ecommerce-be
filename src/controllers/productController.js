@@ -1,7 +1,11 @@
+import { env } from "~/config/environment";
+import { extractPublicIdFromUrl } from "~/config/extractPublicId";
+import { handleMultipleImageUpload } from "~/config/mullter";
 import Category from "~/models/categoryModel";
 import Product from "~/models/productModel";
 import { productService } from "~/services/productService";
 import removeVietnameseTones from "~/utils/removeVietnameseTones";
+import { v2 as cloudinary } from "cloudinary";
 
 const createProduct = async (req, res, next) => {
   if (!req.body.name) {
@@ -10,28 +14,39 @@ const createProduct = async (req, res, next) => {
       .json({ success: false, message: "Tên sản phẩm là bắt buộc!" });
   }
 
+  const imagePaths =
+    env.BUILD_MODE === "dev"
+      ? req.files.map((file) => `uploads/products/${file.filename}`)
+      : await handleMultipleImageUpload(req.files, "product");
+
   try {
     const validations = {
       name: (valid) => valid,
-      image: (valid) => valid.length > 0,
       categories: (valid) => valid,
       price: (valid) => Number(valid),
       price_old: (valid) => Number(valid),
       countInstock: (valid) => Number(valid),
-      rating: (valid) => valid,
+      rating: (valid) => Number(valid) !== 0,
       description: (valid) => valid,
     };
 
+    if (!imagePaths.length) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu ảnh sản phẩm" });
+    }
+
     for (const item in validations) {
-      // console.log("validations[item]", req.body[item]);
       if (!validations[item](req.body[item])) {
         return res
-          .status(401)
-          .json({ message: `${item} thiếu hoặc sai định dạng` });
+          .status(400)
+          .json({ success: false, message: `${item} thiếu hoặc sai định dạng` });
       }
     }
 
-    const result = await productService.createProduct(req.body);
+    const result = await productService.createProduct(req.body, imagePaths);
+
+    // ✅ Trả kết quả response ở đây
     if (!result.success) {
       return res.status(400).json(result);
     }
@@ -42,11 +57,57 @@ const createProduct = async (req, res, next) => {
 };
 
 const updateProduct = async (req, res, next) => {
+  const removedImages = JSON.parse(req.body.removedImages || "[]");
+  let unchangedImages = JSON.parse(req.body.unchangedImages || "[]");
+  const currentImages = req.files
+  if (unchangedImages.length === 0 && currentImages.length === 0) {
+    return res.status(500).json({ success: false, message: "Thêm hình ảnh khác" });
+  }
+  // 1. Xoá ảnh cũ nếu có
+  if (removedImages.length > 0) {
+    try {
+      const publicIds = removedImages.map(extractPublicIdFromUrl).filter(Boolean);
+      await removeImagesFromCloudinary(publicIds);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: "Không thể xóa ảnh", error });
+    }
+  }
+
   try {
-    const result = await productService.updateProduct(req.body);
-    return res.status(200).json(result);
+    // 2. Chuẩn hoá danh sách ảnh gửi về
+    // const newImagePaths = req.files.map(file => file.path); // ['uploads/products/...']
+    const newImagePaths = env.BUILD_MODE === "dev" ? req.files.map(file => file.path) : await handleMultipleImageUpload(req.files, "product"); // ['uploads/products/...']
+    const allImages = [...unchangedImages, ...newImagePaths];
+    // 3. Gộp form
+    const form = {
+      ...req.body,
+      image: allImages,
+    };
+
+    // 4. Gửi qua service
+    const updatedProduct = await productService.updateProduct(form);
+
+    // ✅ Trả kết quả response ở đây
+    if (!updatedProduct.success) {
+      return res.status(400).json(updatedProduct);
+    }
+
+    return res.status(200).json(updatedProduct);
   } catch (error) {
-    next(error);
+    next(error)
+  }
+};
+
+
+// Hàm xóa ảnh khỏi Cloudinary
+const removeImagesFromCloudinary = async (publicIds) => {
+  for (let publicId of publicIds) {
+    try {
+      // Gọi API Cloudinary để xóa ảnh
+      cloudinary.uploader.destroy(publicId);
+    } catch (error) {
+      throw new Error(`Lỗi khi xóa ảnh ${publicId}`);
+    }
   }
 };
 
