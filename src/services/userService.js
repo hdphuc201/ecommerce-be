@@ -64,6 +64,7 @@ const createUser = async (newUser) => {
       phone,
       password: hash,
       isAdmin,
+      isActive: true,
     });
     return {
       success: true,
