@@ -1,7 +1,7 @@
 import express from "express";
 import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware"; // Import authMiddleware
 import { userController } from "~/controllers/userController";
-import { uploadUser } from "~/config/mullter";
+import { uploadUser } from "~/config/multer";
 const Router = express.Router();
 
 // Route công khai: Không cần authMiddleware

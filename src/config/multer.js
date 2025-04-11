@@ -24,8 +24,14 @@ const storageUser = multer.diskStorage({
 });
 
 // Export các middleware multer cho ảnh product và user
-export const uploadProduct = multer({ storage: storageProduct, limits: { fileSize: 5 * 1024 * 1024 } });
-export const uploadUser = multer({ storage: storageUser, limits: { fileSize: 5 * 1024 * 1024 } });
+export const uploadProduct = multer({
+  storage: storageProduct,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+export const uploadUser = multer({
+  storage: storageUser,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 // Function xử lý upload ảnh
 // helpers/image.helper.js
@@ -57,7 +63,8 @@ export const handleMultipleImageUpload = async (files, type) => {
   } else {
     return files.map(
       (file) =>
-        `http://localhost:8017/uploads/${type === "product" ? "products" : "users"
+        `http://localhost:8017/uploads/${
+          type === "product" ? "products" : "users"
         }/${file.filename}`
     );
   }
