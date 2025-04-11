@@ -81,9 +81,10 @@ const getAllDiscounts = async (req, res, next) => {
   const { code } = req.query;
   try {
     const filter = {};
-    if (code) {
-      filter.code = code.toUpperCase().trim(); // chuẩn hóa code để so sánh
-    }
+    // if (code) {
+    //   filter.code = code.toUpperCase().trim(); // chuẩn hóa code để so sánh
+    // }
+    if (code) filter.code = { $regex: new RegExp(code, "i") };
     const discounts = await Discount.find(filter).sort({ createdAt: -1 });
     if (!discounts) {
       return res
