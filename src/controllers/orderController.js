@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
-import { sendInforOrderEmail, sendVerificationEmail } from "~/config/sendEmail";
+import { sendInforOrderEmail } from "~/config/sendEmail";
 import Cart from "~/models/cartModel";
+import Discount from "~/models/discountModel";
 import Order from "~/models/orderModel";
 import User from "~/models/userModel";
 
@@ -19,134 +20,149 @@ const getOrder = async (req, res, next) => {
 };
 const getOrderAdmin = async (req, res, next) => {
   try {
-    const { id } = req.query;
-    // const isArray = Array.isArray(id) ? id : [id];
-    const listOrder = await Order.find({ userId: id });
-
-    if (listOrder) {
-      return res.status(201).json(listOrder);
+    const { id, page, limit } = req.query;
+    const offset = (page - 1) * limit;
+    // Xác thực page và limit để đảm bảo chúng là các số nguyên dương
+    if (page <= 0 || limit <= 0) {
+      return {
+        success: false,
+        message: "Page và limit phải là các số nguyên dương",
+      };
     }
+
+    const totalOrders = await Order.countDocuments({ userId: id });
+    const orders = await Order.find({ userId: id })
+      .limit(limit || 4)
+      .skip(offset);
+
+    return res.status(200).json({
+      success: true,
+      data: offset >= totalOrders ? [] : orders,
+      total: totalOrders,
+      currentPage: page,
+      totalPage: Math.ceil(totalOrders / limit),
+      length: offset >= totalOrders ? 0 : orders.length,
+    });
   } catch (error) {
     res.status(500).json(error);
   }
 };
-const applyDiscount = (subtotal, discountCode, shippingFee) => {
-  let discountAmount = 0;
 
-  // Kiểm tra mã giảm giá và tính toán giảm giá
-  if (discountCode === "KHUYENMAI30") {
-    discountAmount = (subtotal * 30) / 100; // Giảm giá 30%
-  } else if (discountCode === "KHUYENMAI10") {
-    discountAmount = (subtotal * 10) / 100; // Giảm giá 10%
-  }
-
-  // Đảm bảo rằng tổng tiền không âm
-  const newSubtotal = Math.max(0, subtotal - discountAmount) + shippingFee;
-
-  return newSubtotal;
-};
-
-const createOrder = async (req, res, next) => {
+const createOrder = async (req, res) => {
   try {
-    const { name, email, phone, ...orders } = req.body;
-    let userId = orders?.userId || null;
+    const { name, email, phone, ...orderData } = req.body;
+    let userId = orderData.userId || null;
 
-    if (!orders.shippingAddress) {
-      return res.status(400).json({
-        success: false,
-        message: "Cập nhật địa chỉ",
-      });
+    // 1. Kiểm tra địa chỉ
+    if (!orderData.shippingAddress) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Cập nhật địa chỉ" });
     }
 
-    if (userId === null) {
-      const validators = {
-        name: (val) => typeof val === "string" && val.trim() !== "",
-        email: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
-        phone: (val) => /^\d{10}$/.test(val),
-      };
+    // 2. Nếu chưa có userId → tạo/tìm user ẩn danh
+    if (!userId) {
+      const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      const isValidPhone = /^\d{10}$/.test(phone);
 
-      for (const field in validators) {
-        if (!validators[field](req.body[field])) {
-          return res.status(400).json({
-            success: false,
-            message: `${field} không hợp lệ hoặc thiếu`,
-          });
-        }
+      if (!name || !isValidEmail || !isValidPhone) {
+        return res.status(400).json({
+          success: false,
+          message: "Thông tin người dùng không hợp lệ",
+        });
       }
 
-      const checkUser = await User.findOne({ email });
-      if (!checkUser) {
-        const createUser = await User.create({ name, email, phone });
-        userId = createUser._id;
-      } else {
-        userId = checkUser._id;
-      }
+      const existingUser = await User.findOne({ email });
+      userId = existingUser
+        ? existingUser._id
+        : (await User.create({ name, email, phone }))._id;
     }
 
+    // 3. Validate userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res
         .status(400)
         .json({ success: false, message: "User ID không hợp lệ" });
     }
-    orders.userId = userId;
-    const shippingFee = orders.shippingFee || 0; // Mặc định phí vận chuyển luôn có
 
-    // Kiểm tra mã giảm giá (nếu có)
-    if (orders.discount || orders.shippingFee) {
-      if (["GIAM30", "GIAM10"].includes(orders.discount)) {
-        // Nếu mã giảm giá hợp lệ, áp dụng giảm giá
-        orders.subTotal = applyDiscount(
-          orders.subTotal,
-          orders.discount,
-          shippingFee
-        );
-      } else {
-        // Nếu mã giảm giá không hợp lệ
+    orderData.userId = userId;
+
+    // 4. Tính lại tổng phụ
+    const subTotal = orderData.orderItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // 5. Kiểm tra mã giảm giá
+    let discountAmount = 0;
+    if (orderData.discount) {
+      const discount = await Discount.findOne({ code: orderData.discount });
+
+      if (!discount)
         return res.status(400).json({ message: "Mã giảm giá không hợp lệ" });
+
+      discountAmount =
+        discount.type === "percent"
+          ? subTotal * (discount.value / 100)
+          : discount.value;
+
+      if (orderData.discountPrice !== discountAmount) {
+        return res.status(400).json({ message: "Số tiền giảm chưa chính xác" });
       }
-    } else {
-      orders.subTotal += shippingFee;
+
+      // Trừ số lần dùng và vô hiệu nếu hết lượt
+      discount.usageLimit -= 1;
+      discount.usedCount += 1;
+      if (discount.usageLimit <= 0) discount.isActive = false;
+      await discount.save();
     }
 
-    // ✅ Lưu đơn hàng vào database
-    const order = new Order(orders);
+    // 6. Kiểm tra tổng giá trị
+    const totalPrice = subTotal - discountAmount + orderData.shippingFee;
+
+    if (orderData.totalPrice !== totalPrice) {
+      return res.status(400).json({ message: "Tổng tiền tính chưa chính xác" });
+    }
+
+    if (orderData.subTotal !== subTotal) {
+      return res.status(400).json({ message: "Tạm tính chưa chính xác" });
+    }
+
+    // 7. Lưu đơn hàng
+    const order = new Order(orderData);
     const createdOrder = await order.save();
 
-    // ✅ Kiểm tra giỏ hàng có tồn tại không
-    const cart = await Cart.findOne({ userId: orders?.userId });
-
+    // 8. Cập nhật giỏ hàng nếu có
+    const cart = await Cart.findOne({ userId });
     if (cart) {
-      // Nếu có giỏ hàng → Cập nhật giỏ hàng
-      const listProductOrderd = createdOrder?.orderItems.map((item) =>
+      const orderedIds = createdOrder.orderItems.map((item) =>
         item._id.toString()
       );
-
-      for (const productId of listProductOrderd) {
-        const productIndex = cart?.listProduct.findIndex(
-          (product) => product?._id?.toString() === productId.toString()
-        );
-
-        if (productIndex !== -1) {
-          const removedProduct = cart.listProduct.splice(productIndex, 1)[0];
+      cart.listProduct = cart.listProduct.filter((product) => {
+        const matched = orderedIds.includes(product._id.toString());
+        if (matched) {
           cart.totalProduct -= 1;
-          cart.subTotal -= removedProduct.quantity * removedProduct.price;
+          cart.subTotal -= product.price * product.quantity;
         }
-      }
+        return !matched;
+      });
       await cart.save();
     }
 
-    // ✅ Gửi email xác nhận
+    // 9. Gửi email
     await sendInforOrderEmail(email, createdOrder);
 
     return res.status(200).json({
       success: true,
       message: `Đặt hàng thành công${
-        !req.body._id ? ", theo dõi đơn hàng qua Email " : ""
+        !req.body._id ? ", theo dõi đơn hàng qua Email" : ""
       }`,
       createdOrder,
     });
   } catch (error) {
-    return res.status(500).json(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi server", error });
   }
 };
 

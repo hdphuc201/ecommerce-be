@@ -15,10 +15,11 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     phone: { type: String },
     password: { type: String },
-    isAdmin: { type: Boolean, default: false },
     avatar: { type: String },
     address: [addressSchema],
     googleId: { type: String },
+    isAdmin: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

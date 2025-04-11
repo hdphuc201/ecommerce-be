@@ -38,9 +38,10 @@ const createProduct = async (req, res, next) => {
 
     for (const item in validations) {
       if (!validations[item](req.body[item])) {
-        return res
-          .status(400)
-          .json({ success: false, message: `${item} thiếu hoặc sai định dạng` });
+        return res.status(400).json({
+          success: false,
+          message: `${item} thiếu hoặc sai định dạng`,
+        });
       }
     }
 
@@ -59,24 +60,33 @@ const createProduct = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
   const removedImages = JSON.parse(req.body.removedImages || "[]");
   let unchangedImages = JSON.parse(req.body.unchangedImages || "[]");
-  const currentImages = req.files
+  const currentImages = req.files;
   if (unchangedImages.length === 0 && currentImages.length === 0) {
-    return res.status(500).json({ success: false, message: "Thêm hình ảnh khác" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Thêm hình ảnh khác" });
   }
   // 1. Xoá ảnh cũ nếu có
   if (removedImages.length > 0) {
     try {
-      const publicIds = removedImages.map(extractPublicIdFromUrl).filter(Boolean);
+      const publicIds = removedImages
+        .map(extractPublicIdFromUrl)
+        .filter(Boolean);
       await removeImagesFromCloudinary(publicIds);
     } catch (error) {
-      return res.status(500).json({ success: false, message: "Không thể xóa ảnh", error });
+      return res
+        .status(500)
+        .json({ success: false, message: "Không thể xóa ảnh", error });
     }
   }
 
   try {
     // 2. Chuẩn hoá danh sách ảnh gửi về
     // const newImagePaths = req.files.map(file => file.path); // ['uploads/products/...']
-    const newImagePaths = env.BUILD_MODE === "dev" ? req.files.map(file => file.path) : await handleMultipleImageUpload(req.files, "product"); // ['uploads/products/...']
+    const newImagePaths =
+      env.BUILD_MODE === "dev"
+        ? req.files.map((file) => file.path)
+        : await handleMultipleImageUpload(req.files, "product"); // ['uploads/products/...']
     const allImages = [...unchangedImages, ...newImagePaths];
     // 3. Gộp form
     const form = {
@@ -94,10 +104,9 @@ const updateProduct = async (req, res, next) => {
 
     return res.status(200).json(updatedProduct);
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
-
 
 // Hàm xóa ảnh khỏi Cloudinary
 const removeImagesFromCloudinary = async (publicIds) => {

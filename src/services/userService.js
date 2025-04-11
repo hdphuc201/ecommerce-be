@@ -52,7 +52,6 @@ const loginUser = async ({ email, password }) => {
   }
 };
 
-
 const createUser = async (newUser) => {
   try {
     const { avatar, name, email, phone, password, isAdmin } = newUser;

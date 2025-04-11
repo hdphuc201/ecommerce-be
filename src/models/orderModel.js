@@ -27,17 +27,18 @@ const orderSchema = new mongoose.Schema(
     subTotal: { type: Number, default: 0 }, // Tổng tiền sản phẩm
     shippingFee: { type: Number, default: 0 }, // Phí vận chuyển
     discount: { type: String, default: "" }, // Mã giảm giá
-
+    discountPrice: { type: Number, default: 0 },
     shippingAddress: {
       houseNumber: { type: String, required: true },
       district: { type: String, required: true },
       city: { type: String, required: true },
       defaultAddress: { type: Boolean, default: false },
     },
-
     deliveryMethod: { type: String, required: true }, // Phương thức giao hàng
     paymentMethod: { type: String, required: true }, // Phương thức thanh toán
-    trackingNumber: { type: String, default: "" }, // Số theo dõi giao hàng
+    trackingNumber: { type: String, default: "" }, // Số theo dõi giao hàng,
+    isPaid: { type: Boolean, default: false },
+    totalPrice: { type: Number, required: true }, // ✅ Thêm dòng này đúng chuẩn
   },
   { timestamps: true } // Thêm các trường createdAt và updatedAt
 );

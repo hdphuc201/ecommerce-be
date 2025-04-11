@@ -1,5 +1,5 @@
 import express from "express";
-import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware"; // Import authMiddleware
+import { authMiddleware } from "~/middlewares/authMiddleware"; // Import authMiddleware
 import { cartController } from "~/controllers/cartController";
 const Router = express.Router();
 

@@ -57,7 +57,7 @@ export const sendInforOrderEmail = async (email, ordered) => {
           </p>
           <p>
               <strong>Tổng tiền:</strong> ${
-                formatNumber(ordered?.subTotal) || 0
+                formatNumber(ordered?.totalPrice) || 0
               }
           </p>
           <p className="mt-3">

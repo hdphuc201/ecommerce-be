@@ -89,8 +89,13 @@ const verifyEmail = async (req, res) => {
 
 const loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, isActive } = req.body;
 
+    if (isActive === false) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Tài khoản đã bị khóa" });
+    }
     // Validate đầu vào
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       return res.status(400).json({ message: "Email không hợp lệ hoặc thiếu" });
@@ -133,7 +138,6 @@ const loginUser = async (req, res, next) => {
       res.clearCookie("access_token");
     }
 
-
     return res.status(200).json({
       ...response,
       modeCookie: env.COOKIE_MODE,
@@ -142,7 +146,6 @@ const loginUser = async (req, res, next) => {
     next(error);
   }
 };
-
 
 const loginGoogle = async (req, res, next) => {
   const { token } = req.body;
@@ -164,6 +167,11 @@ const loginGoogle = async (req, res, next) => {
     const { sub, name, email, picture } = ticket.getPayload();
     let user = await User.findOne({ email });
 
+    if (user.isActive === false) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Tài khoản đã bị khóa" });
+    }
     if (!user) {
       user = await User.create({
         googleId: sub,
@@ -206,11 +214,11 @@ const loginGoogle = async (req, res, next) => {
       ...(env.COOKIE_MODE
         ? {} // không gửi token nếu dùng cookie
         : {
-          token: {
-            access_token,
-            refresh_token,
-          },
-        }),
+            token: {
+              access_token,
+              refresh_token,
+            },
+          }),
     });
   } catch (error) {
     console.error("Lỗi loginGoogle:", error);
@@ -273,11 +281,7 @@ const refreshToken = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
   try {
-    const {
-      email,
-      password,
-      confirmPassword,
-    } = req.body;
+    const { email, password, confirmPassword } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -290,7 +294,6 @@ const createUser = async (req, res, next) => {
     const validators = {
       name: (val) => val,
       email: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
-      phone: (val) => /^\d{10}$/.test(val),
       password: (val) => val,
     };
 
@@ -322,9 +325,25 @@ const updateUser = async (req, res, next) => {
   try {
     // update sử dụng cho user và admin
     // nếu req?.body (từ admin) không có thì lấy user id (từ user)
-    const { _id } = req.body;
+    const { _id, isActive, isAdmin, userId } = req.body;
     const id = _id ? _id : req?.user._id;
     if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
+
+    if (isAdmin === true) {
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { isActive },
+        { new: true }
+      );
+      return res.status(200).json({
+        success: true,
+        message: isActive
+          ? "Mở khoá tài khoản thành công"
+          : "Khoá tài khoản thành công",
+        user,
+      });
+    }
+
     const result = await userService.updateUser(id, req.body);
     if (!result.success) return res.status(400).json(result);
     return res.status(200).json(result);

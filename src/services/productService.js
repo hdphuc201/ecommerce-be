@@ -3,7 +3,7 @@ import Product from "~/models/productModel";
 
 const createProduct = async (newProduct, imagePaths) => {
   try {
-    const { name, } = newProduct;
+    const { name } = newProduct;
     const checkProduct = await Product.findOne({ name });
     if (checkProduct !== null) {
       return {
@@ -144,21 +144,12 @@ const getAllProduct = async (limit, page, sortObj, filterConditions) => {
       products = await Product.find({}).limit(limit).skip(offset).sort(sortObj);
     }
 
-    if (offset >= totalProduct) {
-      return {
-        data: [],
-        total: totalProduct,
-        currentPage: page,
-        totalPage: Math.ceil(totalProduct / limit),
-        length: 0,
-      };
-    }
     return {
-      data: products,
+      data: offset >= totalProduct ? [] : products,
       total: totalProduct,
       currentPage: page,
       totalPage: Math.ceil(totalProduct / limit),
-      length: products.length,
+      length: offset >= totalProduct ? 0 : products.length,
     };
   } catch (error) {
     throw new Error(error.message);
