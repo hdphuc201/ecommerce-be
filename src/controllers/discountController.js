@@ -77,6 +77,7 @@ const createDiscount = async (req, res, next) => {
 // ✅ Lấy tất cả mã giảm giá
 const getAllDiscounts = async (req, res, next) => {
   const { code } = req.query;
+  console.log("get discount");
   try {
     const filter = {};
     if (code) {
@@ -84,9 +85,11 @@ const getAllDiscounts = async (req, res, next) => {
     }
     const discounts = await Discount.find(filter).sort({ createdAt: -1 });
     if (!discounts) {
-      res.status(401).json({ success: false, message: "Không tìm thấy mã" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Không tìm thấy mã" });
     }
-    res.status(200).json({ success: true, data: discounts });
+    res.status(200).json({ success: true, data: discounts || [] });
   } catch (error) {
     next(error);
   }
