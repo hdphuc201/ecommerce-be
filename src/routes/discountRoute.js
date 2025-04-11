@@ -11,11 +11,7 @@ Router.post(
   discountController.createDiscount
 );
 Router.get("/getDiscount", discountController.getAllDiscounts);
-Router.post(
-  "/validate",
-  authMiddleware,
-  discountController.validateDiscountCode
-);
+Router.post("/validate", discountController.validateDiscountCode);
 Router.delete(
   "/deleteDiscount",
   authMiddleware,

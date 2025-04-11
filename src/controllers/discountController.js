@@ -1,5 +1,6 @@
 import Discount from "~/models/discountModel";
 import Order from "~/models/orderModel";
+import User from "~/models/userModel";
 
 // ✅ Tạo mã giảm giá mới
 const createDiscount = async (req, res, next) => {
@@ -98,9 +99,14 @@ const getAllDiscounts = async (req, res, next) => {
 // ✅ Kiểm tra mã giảm giá hợp lệ
 const validateDiscountCode = async (req, res, next) => {
   try {
-    const { code, subTotal } = req.body;
-    const userId = req.user?._id;
+    const { code, subTotal, id } = req.body;
 
+    console.log(id);
+    if (id === undefined) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Đăng nhập để lấy mã giảm giá" });
+    }
     const discount = await Discount.findOne({ code });
 
     if (!discount) {
@@ -116,13 +122,8 @@ const validateDiscountCode = async (req, res, next) => {
         .status(400)
         .json({ success: false, message: "Mã chưa áp dụng hoặc đã hết hạn" });
     }
-    if (!userId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Đăng nhập để lấy mã giảm giá" });
-    }
 
-    const listOrder = await Order.find({ userId });
+    const listOrder = await Order.find({ id });
 
     const findCode = listOrder
       .filter((item) => item)
