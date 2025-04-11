@@ -1,5 +1,5 @@
-import Order from "./../models/orderModel";
-import Discount from "./../models/discountModel";
+import Discount from "~/models/discountModel";
+import Order from "~/models/orderModel";
 
 // ✅ Tạo mã giảm giá mới
 const createDiscount = async (req, res, next) => {
@@ -77,7 +77,6 @@ const createDiscount = async (req, res, next) => {
 
 // ✅ Lấy tất cả mã giảm giá
 const getAllDiscounts = async (req, res, next) => {
-  console.log("🔥 GET /getDiscount called");
   const { code } = req.query;
   try {
     const filter = {};
