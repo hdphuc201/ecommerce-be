@@ -122,6 +122,7 @@ const updateProductStock = async (req, res, next) => {
     if (!product) throw new Error("Sản phẩm không tồn tại");
 
     product.countInstock -= quantityOrdered; // Trừ số lượng
+    product.sold += quantityOrdered; // Trừ số lượng
 
     await product.save();
     return res.status(200).json({ message: "Cập nhật số lượng thành công" });

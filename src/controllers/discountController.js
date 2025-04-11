@@ -101,7 +101,6 @@ const validateDiscountCode = async (req, res, next) => {
   try {
     const { code, subTotal, id } = req.body;
 
-    console.log(id);
     if (id === undefined) {
       return res
         .status(400)
