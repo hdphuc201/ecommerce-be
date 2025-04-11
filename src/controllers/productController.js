@@ -13,7 +13,6 @@ import { v2 as cloudinary } from "cloudinary";
 const createProduct = async (req, res, next) => {
   try {
     const { files } = req;
-    console.log("files", files)
     if (!files?.length) {
       return res
         .status(400)
