@@ -1,9 +1,13 @@
 import express from "express";
-import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware"; // Import authMiddleware
-import { discountController } from "~/controllers/discountController";
+import { discountController } from "./../controllers/discountController";
+import {
+  authMiddleware,
+  isAdmin,
+} from "../../build/src/middlewares/authMiddleware";
 
 const Router = express.Router();
 
+console.log("discount Router");
 Router.post(
   "/createDiscount",
   authMiddleware,

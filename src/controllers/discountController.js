@@ -1,15 +1,16 @@
-import Discount from "~/models/discountModel";
-import Order from "~/models/orderModel";
-import User from "~/models/userModel";
+import Order from "./../models/orderModel";
+import Discount from "./../models/discountModel";
+
 // ✅ Tạo mã giảm giá mới
 const createDiscount = async (req, res, next) => {
   try {
     const validations = {
       code: (value) =>
-        String(value) &&
-        String(value).trim() !== "" &&
-        /^[A-Z0-9]+$/.test(value),
-      description: (value) => String(value),
+        typeof value === "string" &&
+        value.trim() !== "" &&
+        /^[A-Z0-9]+$/.test(value.trim()),
+      description: (value) =>
+        typeof value === "string" && value.trim().length > 0,
       type: (value) => ["percent", "fixed"].includes(value),
       value: (value, type) => {
         const num = Number(value);
@@ -76,8 +77,8 @@ const createDiscount = async (req, res, next) => {
 
 // ✅ Lấy tất cả mã giảm giá
 const getAllDiscounts = async (req, res, next) => {
+  console.log("🔥 GET /getDiscount called");
   const { code } = req.query;
-  console.log("get discount");
   try {
     const filter = {};
     if (code) {

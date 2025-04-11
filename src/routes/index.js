@@ -14,5 +14,6 @@ Router.use("/api/order", orderRoute);
 Router.use("/api/cart", cartRoute);
 Router.use("/api/chart", chartRoute);
 Router.use("/api/discount", discountRoute);
+console.log("index Router");
 
 export { Router };
