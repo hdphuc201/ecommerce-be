@@ -2,16 +2,23 @@ import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import cloudinary from "./cloudinary"; // Đảm bảo cloudinary đã cấu hình đúng
 import { env } from "./environment"; // Lấy môi trường
-
+import streamifier from "streamifier";
 // Upload ảnh cho sản phẩm
-const storageProduct = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/products/"); // Lưu ảnh vào folder "products"
-  },
-  filename: function (req, file, cb) {
-    cb(null, `${uuidv4()}-${file.originalname}`); // Tên file bao gồm uuid và tên file gốc
-  },
-});
+
+const storageProduct = multer.memoryStorage();
+
+// const storageProduct = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "uploads/products/"); // Lưu ảnh vào folder "products"
+//   },
+//   filename: function (req, file, cb) {
+//     const originalName = file.originalname
+//       .normalize("NFD")
+//       .replace(/[\u0300-\u036f]/g, "");
+//     const sanitized = originalName.replace(/[^a-zA-Z0-9.-]/g, "_"); // tránh ký tự lạ
+//     cb(null, `${uuidv4()}-${sanitized}`);
+//   },
+// });
 
 // Upload ảnh cho user
 const storageUser = multer.diskStorage({
@@ -24,9 +31,14 @@ const storageUser = multer.diskStorage({
 });
 
 // Export các middleware multer cho ảnh product và user
+// export const uploadProduct = multer({
+//   storage: storageProduct,
+//   limits: { fileSize: 5 * 1024 * 1024 },
+// });
+
 export const uploadProduct = multer({
   storage: storageProduct,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 export const uploadUser = multer({
   storage: storageUser,
@@ -68,4 +80,28 @@ export const handleMultipleImageUpload = async (files, type) => {
         }/${file.filename}`
     );
   }
+};
+
+export const handleImageUploadBuffer = (fileBuffer, folder) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+
+    streamifier.createReadStream(fileBuffer).pipe(uploadStream);
+  });
+};
+
+export const handleMultipleImageUploadBuffer = async (
+  files,
+  type = "products"
+) => {
+  const uploads = files.map((file) =>
+    handleImageUploadBuffer(file.buffer, type)
+  );
+  return await Promise.all(uploads);
 };

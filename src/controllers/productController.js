@@ -1,6 +1,9 @@
 import { env } from "~/config/environment";
 import { extractPublicIdFromUrl } from "~/config/extractPublicId";
-import { handleMultipleImageUpload } from "~/config/multer";
+import {
+  handleMultipleImageUpload,
+  handleMultipleImageUploadBuffer,
+} from "~/config/multer";
 import Category from "~/models/categoryModel";
 import Product from "~/models/productModel";
 import { productService } from "~/services/productService";
@@ -8,18 +11,17 @@ import removeVietnameseTones from "~/utils/removeVietnameseTones";
 import { v2 as cloudinary } from "cloudinary";
 
 const createProduct = async (req, res, next) => {
-  if (!req.body.name) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Tên sản phẩm là bắt buộc!" });
-  }
-
-  const imagePaths =
-    env.BUILD_MODE === "dev"
-      ? req.files.map((file) => `uploads/products/${file.filename}`)
-      : await handleMultipleImageUpload(req.files, "product");
-
   try {
+    const { files } = req;
+    console.log("files", files)
+    if (!files?.length) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu ảnh sản phẩm" });
+    }
+
+    const imagePaths = await handleMultipleImageUploadBuffer(files, "products");
+
     const validations = {
       name: (valid) => valid,
       categories: (valid) => valid,
@@ -29,12 +31,6 @@ const createProduct = async (req, res, next) => {
       rating: (valid) => Number(valid) !== 0,
       description: (valid) => valid,
     };
-
-    if (!imagePaths.length) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Thiếu ảnh sản phẩm" });
-    }
 
     for (const item in validations) {
       if (!validations[item](req.body[item])) {

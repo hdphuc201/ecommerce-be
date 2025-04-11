@@ -113,7 +113,10 @@ const createOrder = async (req, res) => {
       // Trừ số lần dùng và vô hiệu nếu hết lượt
       discount.usageLimit -= 1;
       discount.usedCount += 1;
-      if (discount.usageLimit <= 0) discount.isActive = false;
+      if (discount.usageLimit <= 0) {
+        discount.isActive = false;
+        discount.usageLimit = 0;
+      }
       await discount.save();
     }
 
