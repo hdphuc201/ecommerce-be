@@ -7,7 +7,6 @@ import {
 
 const Router = express.Router();
 
-console.log("discount Router");
 Router.post(
   "/createDiscount",
   authMiddleware,

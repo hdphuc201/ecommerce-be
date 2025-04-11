@@ -1,6 +1,6 @@
 import { env } from "~/config/environment";
 import { extractPublicIdFromUrl } from "~/config/extractPublicId";
-import { handleMultipleImageUpload } from "~/config/mullter";
+import { handleMultipleImageUpload } from "~/config/multer";
 import Category from "~/models/categoryModel";
 import Product from "~/models/productModel";
 import { productService } from "~/services/productService";
