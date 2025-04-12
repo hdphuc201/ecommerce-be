@@ -2,7 +2,7 @@ import Cart from "~/models/cartModel";
 // Lấy giỏ hàng của user
 const getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ userId: req.user._id }).populate(
+    const cart = await Cart.findOne({ userId: req?.user?._id }).populate(
       "listProduct"
     );
     if (!cart) {
@@ -21,12 +21,12 @@ const getCart = async (req, res) => {
 const addCart = async (req, res) => {
   try {
     const { productId, name, price, quantity, image, countInstock } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
     let cart = await Cart.findOne({ userId });
 
     if (!cart) {
       cart = new Cart({
-        userId: req.user.id,
+        userId: req.user?.id,
         listProduct: [],
         totalProduct: 0,
         subTotal: 0,
@@ -90,7 +90,7 @@ const updateCart = async (req, res) => {
 const removeCart = async (req, res) => {
   try {
     const { id } = req.query;
-    let cart = await Cart.findOne({ userId: req.user._id });
+    let cart = await Cart.findOne({ userId: req.user?._id });
     if (!cart)
       return res.status(400).json({ message: "Giỏ hàng không tồn tại" });
 

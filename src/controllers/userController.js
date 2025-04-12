@@ -455,7 +455,7 @@ const getAddress = async (req, res, next) => {
 
 const createAddress = async (req, res, next) => {
   try {
-    const id = req.user._id;
+    const id = req.user?._id;
     const { houseNumber, district, city, defaultAddress } = req.body;
 
     if (!id) {
@@ -465,16 +465,16 @@ const createAddress = async (req, res, next) => {
     }
 
     const validators = {
-      houseNumber: (val) => val,
-      district: (val) => val,
-      city: (val) => val,
+      houseNumber: (val) => !!val,
+      district: (val) => !!val,
+      city: (val) => !!val,
     };
 
-    for (const filed in validators) {
-      if (!validators[filed](req.body[filed])) {
+    for (const field in validators) {
+      if (!validators[field](req.body[field])) {
         return res
           .status(400)
-          .json({ message: `${filed} không hợp lệ hoặc thiếu` });
+          .json({ message: `${field} không hợp lệ hoặc thiếu` });
       }
     }
 
@@ -483,6 +483,7 @@ const createAddress = async (req, res, next) => {
         $set: { "address.$[].defaultAddress": false }, // Đặt tất cả defaultAddress = false
       });
     }
+
     const userUpdate = await User.findByIdAndUpdate(
       id,
       {
@@ -490,17 +491,23 @@ const createAddress = async (req, res, next) => {
           address: { houseNumber, district, city, defaultAddress },
         },
       },
-      {
-        new: true,
-      }
+      { new: true }
     );
 
     if (userUpdate) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Tạo địa chỉ thành công", userUpdate });
+      return res.status(200).json({
+        success: true,
+        message: "Tạo địa chỉ thành công",
+        userUpdate,
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy user",
+      });
     }
   } catch (error) {
+    console.error("Lỗi createAddress:", error);
     next(error);
   }
 };

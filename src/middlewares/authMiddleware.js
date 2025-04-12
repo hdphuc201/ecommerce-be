@@ -62,7 +62,6 @@ export const authMiddleware = async (req, res, next) => {
           return res.status(401).json({ message: "Token revoked" });
         }
       }
-
       req.user = user;
       next();
     });
@@ -70,63 +69,6 @@ export const authMiddleware = async (req, res, next) => {
     next(error);
   }
 };
-
-// export const authMiddleware = async (req, res, next) => {
-//   try {
-//     const token = req.cookies?.access_token;
-
-//     if (!token) {
-//       res.status(401).json({ message: "Unauthorized - No tokens found" });
-//       return;
-//     }
-
-//     jwt.verify(token, env.ACCESS_TOKEN_SECRET, async (err, user) => {
-//       if (err) {
-//         const refreshToken = req.cookies?.refresh_token;
-//         if (!refreshToken) {
-//           return res
-//             .status(401)
-//             .json({ message: "Unauthorized - No refresh tokens found" });
-//         }
-
-//         // Verify refresh token
-//         jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET, (err, user) => {
-//           if (err) {
-//             return res.status(403).json({
-//               message: "Refresh token is not valid",
-//               expired: true,
-//             });
-//           }
-
-//           // Generate new access token
-//           const newAccessToken = jwtService.generateAccessToken(user);
-
-//           // Set new access token in response
-//           res.cookie("access_token", newAccessToken, {
-//             httpOnly: true,
-//             secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
-//             sameSite: "None",
-//           });
-
-//           req.user = user;
-//           next();
-//         });
-//         return;
-//       }
-//       const redisClient = req.redisClient; // Lấy redis từ middleware
-//       const isBlacklisted = await redisClient.get(
-//         `TOKEN_BLACKLIST_${user?._id}_${user.jit}`
-//       );
-//       if (isBlacklisted) {
-//         return res.status(401).json({ message: "Token revoked" });
-//       }
-//       req.user = user;
-//       next();
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 export const isAdmin = async (req, res, next) => {
   try {

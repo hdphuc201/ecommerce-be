@@ -9,15 +9,25 @@ const getOrder = async (req, res, next) => {
   try {
     const userId = req.user?._id;
 
-    const listOrder = await Order.find({ userId: userId });
-
-    if (listOrder) {
-      return res.status(201).json(listOrder);
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Không xác định được người dùng",
+      });
     }
+
+    const listOrder = await Order.find({ userId });
+
+    return res.status(200).json(listOrder);
   } catch (error) {
-    res.status(500).json(error);
+    console.error("Lỗi getOrder:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+    });
   }
 };
+
 const getOrderAdmin = async (req, res, next) => {
   try {
     const { id, page, limit } = req.query;
