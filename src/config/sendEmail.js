@@ -41,58 +41,54 @@ export const sendInforOrderEmail = async (email, ordered) => {
     to: email,
     subject: "Thông tin đơn hàng của bạn",
     html: `
-        <div>
-          <p>
-              <strong>Ngày đặt:</strong> ${formattedDate(ordered?.createdAt)}
-          </p>
-          <p>
-              <strong>Phương thức giao hàng:</strong> ${ordered?.deliveryMethod}
-          </p>
-          <p>
-              <strong>Phương thức thanh toán:</strong> ${ordered?.paymentMethod}
-          </p>
-
-          <p>
-              <strong>Số lượng sản phẩm:</strong> ${ordered?.totalProduct}
-          </p>
-          <p>
-              <strong>Tổng tiền:</strong> ${
-                formatNumber(ordered?.totalPrice) || 0
-              }
-          </p>
-          <p className="mt-3">
-              <strong>Sản phẩm:</strong>
-          </p>
-          <ul>
-              ${ordered?.orderItems?.map(
-                (item, index) =>
-                  `<li
-                  key=${item?._id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <img
-                    src=${item?.image}
-                    alt="Product"
-                    style={{
-                      width: "70px",
-                      height: "70px",
-                      marginRight: "10px",
-                    }}
-                  />
-                  <div>
-                    <p>${item?.name}</p>
-                    <p>
-                      ${formatNumber(item?.price)} x ${item?.quantity || 0}
-                    </p>
-                  </div>
-                </li>`
-              )}
-          </ul>
-      </div>
-    `,
+    <div>
+      <p style="font-size: 16px; margin-bottom: 5px;">
+        <strong>Ngày đặt:</strong> ${formattedDate(ordered?.createdAt)}
+      </p>
+      <p style="font-size: 16px; margin-bottom: 5px;">
+        <strong>Phương thức giao hàng:</strong> ${
+          ordered?.deliveryMethod
+        } - ${formatNumber(ordered?.shippingFee || 0)}₫
+      </p>
+      <p style="font-size: 16px; margin-bottom: 5px;">
+        <strong>Phương thức thanh toán:</strong> ${ordered?.paymentMethod}
+      </p>
+  
+      <p style="font-size: 16px; margin-bottom: 5px;">
+        <strong>Số lượng sản phẩm:</strong> ${ordered?.totalProduct}
+      </p>
+      <p style="font-size: 16px; margin-bottom: 10px;">
+        <strong>Tổng tiền:</strong> ${formatNumber(ordered?.totalPrice || 0)}₫
+      </p>
+      <p style="font-size: 16px; margin-top: 15px; margin-bottom: 5px;">
+        <strong>Sản phẩm:</strong>
+      </p>
+      <ul style="list-style-type: none; padding-left: 0;">
+        ${ordered?.orderItems?.map(
+          (item, index) =>
+            `<li
+              key=${item?._id}
+              style="display: flex; align-items: center; margin-bottom: 10px;"
+            >
+              <img
+                width="70"
+                height="70"
+                src=${item?.image}
+                alt="Product"
+                style="width: 70px; height: 70px; margin-right: 10px;"
+              />
+              <div>
+                <p style="font-size: 16px; margin-bottom: 2px;">${
+                  item?.name
+                }</p>
+                <p style="font-size: 14px; color: #555;">
+                  ${formatNumber(item?.price)}₫ x ${item?.quantity || 0}
+                </p>
+              </div>
+            </li>`
+        )}
+      </ul>
+    </div>
+  `,
   });
 };

@@ -15,7 +15,8 @@ const registerUser = async (req, res, next) => {
     if (existingUser) {
       return res.status(400).json({
         error: true,
-        message: "Email đã tồn tại. Vui lòng chọn email khác.",
+        message:
+          "Email đã tồn tại, hãy đăng nhập Email này bằng Google hoặc vui lòng chọn email khác.",
       });
     }
 
@@ -77,13 +78,16 @@ const verifyEmail = async (req, res) => {
       email,
       password: hash,
       isAdmin,
+      isLogin: true,
     });
     await newUser.save();
     // Xóa mã khỏi Redis
     await redisClient.del(`verify:${email}`);
     res.status(200).json({ verify: true, message: "Đăng ký thành công" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi hệ thống, thử lại sau." });
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, thử lại sau.", error });
   }
 };
 
@@ -167,16 +171,18 @@ const loginGoogle = async (req, res, next) => {
     const { sub, name, email, picture } = ticket.getPayload();
     let user = await User.findOne({ email });
 
-    if (user.isActive === false) {
+    if (user && user.isActive === false) {
       return res
         .status(400)
         .json({ success: false, message: "Tài khoản đã bị khóa" });
     }
+
     if (!user) {
       user = await User.create({
         googleId: sub,
         name,
         email,
+        isLogin: true,
         avatar: picture,
       });
     }
@@ -184,24 +190,27 @@ const loginGoogle = async (req, res, next) => {
     const access_token = jwtService.generateAccessToken(user);
     const refresh_token = jwtService.generateRefreshToken(user);
 
-    // Nếu dùng cookie mode
     if (env.COOKIE_MODE) {
       res.cookie("refresh_token", refresh_token, {
         httpOnly: true,
         secure: true,
         sameSite: "None",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       res.cookie("access_token", access_token, {
         httpOnly: true,
         secure: true,
         sameSite: "None",
+        maxAge: 15 * 60 * 1000, // 15 phút
       });
     } else {
-      // Nếu KHÔNG dùng cookie => clear hết token cũ (nếu có)
       res.clearCookie("refresh_token");
       res.clearCookie("access_token");
     }
+
+    user.isLogin = true;
+    await user.save();
 
     return res.status(200).json({
       success: true,
@@ -209,10 +218,11 @@ const loginGoogle = async (req, res, next) => {
       email: user?.email,
       name: user?.name,
       isAdmin: user?.isAdmin,
+      isLogin: true,
       avatar: user?.avatar || picture,
       _id: user?._id,
       ...(env.COOKIE_MODE
-        ? {} // không gửi token nếu dùng cookie
+        ? {}
         : {
             token: {
               access_token,
@@ -357,8 +367,13 @@ const getDetail = async (req, res, next) => {
     const { id } = req.params;
     if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
 
-    const result = await userService.getDetail(id);
-    return res.status(200).json(result);
+    const user = await User.findById(id, "-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User không tồn tại" });
+    }
+    return res.status(200).json(user);
   } catch (error) {
     next(error);
   }

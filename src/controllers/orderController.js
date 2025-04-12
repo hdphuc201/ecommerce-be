@@ -60,7 +60,7 @@ const createOrder = async (req, res) => {
         .json({ success: false, message: "Cập nhật địa chỉ" });
     }
 
-    // 2. Nếu chưa có userId → tạo/tìm user ẩn danh
+    // 2. Nếu chưa có userId (chưa đăng nhập) → tạo/tìm user ẩn danh
     if (!userId) {
       const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       const isValidPhone = /^\d{10}$/.test(phone);
@@ -71,11 +71,9 @@ const createOrder = async (req, res) => {
           message: "Thông tin người dùng không hợp lệ",
         });
       }
-
       const existingUser = await User.findOne({ email });
-      userId = existingUser
-        ? existingUser._id
-        : (await User.create({ name, email, phone }))._id;
+      userId =
+        existingUser?._id || (await User.create({ name, email, phone }))._id;
     }
 
     // 3. Validate userId

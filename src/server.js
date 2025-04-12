@@ -1,4 +1,3 @@
-
 import express from "express";
 import exitHook from "async-exit-hook";
 import { CONNECT_DB, ClOSE_DB } from "./config/mongodb";

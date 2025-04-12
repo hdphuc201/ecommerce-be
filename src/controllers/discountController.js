@@ -1,6 +1,5 @@
 import Discount from "~/models/discountModel";
 import Order from "~/models/orderModel";
-import User from "~/models/userModel";
 
 // ✅ Tạo mã giảm giá mới
 const createDiscount = async (req, res, next) => {
@@ -139,7 +138,7 @@ const validateDiscountCode = async (req, res, next) => {
         success: false,
         message: `Đơn hàng phải từ ${discount.minOrderValue.toLocaleString(
           "de-DE"
-        )}đ để dùng mã`,
+        )}₫ để dùng mã`,
       });
     }
 

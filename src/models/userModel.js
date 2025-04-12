@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
     googleId: { type: String },
     isAdmin: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    isLogin: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -13,6 +13,7 @@ const registerUser = async (newUser) => {
       email,
       password: hash,
       isAdmin,
+      isLogin: true,
     });
     return {
       success: true,
@@ -20,7 +21,6 @@ const registerUser = async (newUser) => {
       data: createdUser,
     };
   } catch (error) {
-    console.error(error);
     throw new Error(error);
   }
 };
@@ -35,6 +35,8 @@ const loginUser = async ({ email, password }) => {
     const access_token = jwtService.generateAccessToken(user);
     const refresh_token = jwtService.generateRefreshToken(user);
 
+    user.isLogin = true;
+    await user.save();
     return {
       success: true,
       message: "Đăng nhập thành công",
@@ -43,6 +45,7 @@ const loginUser = async ({ email, password }) => {
       avatar: user.avatar,
       isAdmin: user.isAdmin,
       _id: user._id,
+      isLogin: true,
       ...(env.COOKIE_MODE
         ? { checkUser: user }
         : { token: { access_token, refresh_token } }),
@@ -72,20 +75,7 @@ const createUser = async (newUser) => {
       data: createdUser,
     };
   } catch (error) {
-    console.error(error);
     throw new Error(error);
-  }
-};
-
-const getDetail = async (id) => {
-  try {
-    const user = await User.findById(id, "-password");
-    if (!user) {
-      throw new Error("User không tồn tại");
-    }
-    return { user };
-  } catch (error) {
-    return { success: false, message: error.message || "Lỗi server" };
   }
 };
 
@@ -170,7 +160,6 @@ export const userService = {
   registerUser,
   loginUser,
   updateUser,
-  getDetail,
   createUser,
   deleteAllUsers,
 };
