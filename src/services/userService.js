@@ -32,8 +32,8 @@ const loginUser = async ({ email, password }) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Mật khẩu không đúng");
 
-    const access_token = jwtService.generateAccessToken(user);
-    const refresh_token = jwtService.generateRefreshToken(user);
+    const access_token = jwtService?.generateAccessToken(user);
+    const refresh_token = jwtService?.generateRefreshToken(user);
 
     user.isLogin = true;
     await user.save();

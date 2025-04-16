@@ -108,7 +108,7 @@ const loginUser = async (req, res, next) => {
       return res.status(400).json({ message: "Password không được bỏ trống" });
 
     // Gọi service xử lý
-    const response = await userService.loginUser(req.body);
+    const response = await userService?.loginUser(req.body);
 
     if (!response.success) {
       return res.status(400).json(response);
@@ -118,8 +118,8 @@ const loginUser = async (req, res, next) => {
     if (env.COOKIE_MODE) {
       const { checkUser } = response;
 
-      const access_token = jwtService.generateAccessToken(checkUser);
-      const refresh_token = jwtService.generateRefreshToken(checkUser);
+      const access_token = jwtService?.generateAccessToken(checkUser);
+      const refresh_token = jwtService?.generateRefreshToken(checkUser);
 
       // Gán cookies
       res.cookie("refresh_token", refresh_token, {

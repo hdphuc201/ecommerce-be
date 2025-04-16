@@ -39,7 +39,7 @@ export const authMiddleware = async (req, res, next) => {
           }
 
           // Generate new access token
-          const newAccessToken = jwtService.generateAccessToken(user);
+          const newAccessToken = jwtService?.generateAccessToken(user);
 
           // Set new access token in response
           res.cookie("access_token", newAccessToken, {
