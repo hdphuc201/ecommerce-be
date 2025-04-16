@@ -46,9 +46,7 @@ const loginUser = async ({ email, password }) => {
       isAdmin: user.isAdmin,
       _id: user._id,
       isLogin: true,
-      ...(env.COOKIE_MODE
-        ? { checkUser: user }
-        : { token: { access_token, refresh_token } }),
+      ...(env.COOKIE_MODE && { token: { access_token, refresh_token } }),
     };
   } catch (error) {
     return { success: false, message: error.message || "Lỗi server" };
