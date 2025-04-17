@@ -10,68 +10,63 @@ import { CLOSE_REDIS, CONNECT_REDIS, GET_REDIS_CLIENT } from "./config/redis";
 import "dotenv/config";
 import path from "path";
 
+const app = express();
+
+// Middlewares
+app.use(cors(corsOptions));
+app.use("/uploads", express.static(path.resolve("uploads")));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(cookieParser());
+app.use((req, res, next) => {
+  req.redisClient = GET_REDIS_CLIENT();
+  next();
+});
+app.use(Router);
+
+// Simple health check route
+app.get("/", (_, res) => res.end("<h1>Hello World!</h1><hr>"));
+
+// Start server
 const START_SERVER = () => {
-  const app = express();
-  // Cho phép tất cả domain truy cập API (⚠️ Không an toàn cho production)
-  app.use(cors(corsOptions));
+  const port =
+    env.BUILD_MODE === "production" ? process.env.PORT : env.LOCAL_DEV_APP_PORT;
+  const host =
+    env.BUILD_MODE === "production" ? undefined : env.LOCAL_DEV_APP_HOST;
 
-  app.use("/uploads", express.static(path.resolve("uploads")));
-
-  app.use(express.json({ limit: "5mb" })); // Cho phép JSON tối đa 5MB
-  app.use(express.urlencoded({ extended: true, limit: "5mb" })); // Xử lý form-urlencoded
-
-  app.use(cookieParser()); // Sử dụng middleware để đọc cookie
-  // Thêm redisClient vào req để các routes dùng được
-  app.use((req, res, next) => {
-    req.redisClient = GET_REDIS_CLIENT(); // Dùng req.redisClient ở route
-    next();
+  app.listen(port, host, () => {
+    console.log(
+      `${
+        env.BUILD_MODE === "production" ? "Production" : "Dev"
+      }: Server running at ${host ?? ""}:${port}`
+    );
   });
-  app.use(Router);
-
-  app.get("/", (req, res) => {
-    res.end("<h1>Hello World!</h1><hr>");
-  });
-
-  // Môi trường production cụ thể là render.com
-  if (env.BUILD_MODE === "production") {
-    // render sẽ tự sinh ra PORT, kh cần chỉ định
-    const port = process.env.PORT;
-    app.listen(port, () => {
-      console.log(
-        `3. Production: Hello Duy Dev, I am running at Port: ${port}`
-      );
-    });
-  } else {
-    app.listen(env.LOCAL_DEV_APP_PORT, env.LOCAL_DEV_APP_HOST, () => {
-      console.log(
-        `3. Dev: Hello Duy Dev, I am running at ${env.LOCAL_DEV_APP_HOST}:${env.LOCAL_DEV_APP_PORT}`
-      );
-    });
-  }
-
-  //  Trên Windows, đôi khi Ctrl + C không kích hoạt đúng async-exit-hook hoặc không đảm bảo chờ hàm ClOSE_DB hoàn thành.
-  // Không giảm số connection trong MongoDB Atlas dashboard → Có thể bị hết connection mà không biết lý do.
-  exitHook(async () => {
-    console.log("Server is shutting down...");
-    await ClOSE_DB();
-    await CLOSE_REDIS();
-    console.log("Disconnect MongoDB Cloud Atlas successfully!");
-  });
-  process.on("SIGINT", exitHook); // Nhấn Ctrl + C
-  process.on("SIGTERM", exitHook);
 };
 
+// Handle shutdown
+exitHook(async () => {
+  console.log("Server is shutting down...");
+  await ClOSE_DB();
+  await CLOSE_REDIS();
+  console.log("Disconnected MongoDB & Redis!");
+});
+process.on("SIGINT", exitHook);
+process.on("SIGTERM", exitHook);
+
+// Main bootstrap
 (async () => {
   try {
-    console.log("1. Connecting to MongoDB Cloud Atlas...");
+    console.log("Connecting to MongoDB...");
     await CONNECT_DB();
-    console.log("2. Connected to MongoDB Cloud Atlas!");
+    console.log("Connected to MongoDB!");
+
     console.log("Connecting to Redis...");
     await CONNECT_REDIS();
     console.log("Connected to Redis!");
+
     START_SERVER();
   } catch (error) {
-    console.error(error);
-    process.exit(0);
+    console.error("Startup error:", error);
+    process.exit(1);
   }
 })();

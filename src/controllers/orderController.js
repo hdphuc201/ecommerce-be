@@ -75,12 +75,25 @@ const createOrder = async (req, res) => {
       const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       const isValidPhone = /^\d{10}$/.test(phone);
 
-      if (!name || !isValidEmail || !isValidPhone) {
+      if (!name) {
         return res.status(400).json({
           success: false,
-          message: "Thông tin người dùng không hợp lệ",
+          message: "Tên không hợp lệ",
         });
       }
+      if (!isValidEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "Email không hợp lệ",
+        });
+      }
+      if (!isValidPhone) {
+        return res.status(400).json({
+          success: false,
+          message: "Số điện thoại không hợp lệ",
+        });
+      }
+
       const existingUser = await User.findOne({ email });
       userId =
         existingUser?._id || (await User.create({ name, email, phone }))._id;
@@ -144,7 +157,7 @@ const createOrder = async (req, res) => {
     const createdOrder = await order.save();
 
     // 8. Cập nhật giỏ hàng nếu có
-    const cart = await Cart.findOne({ userId })
+    const cart = await Cart.findOne({ userId });
     if (cart) {
       const orderedIds = createdOrder.orderItems.map((item) =>
         item._id.toString()
