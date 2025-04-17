@@ -144,7 +144,7 @@ const createOrder = async (req, res) => {
     const createdOrder = await order.save();
 
     // 8. Cập nhật giỏ hàng nếu có
-    const cart = await Cart.findOne({ userId });
+    const cart = await Cart.findOne({ userId })
     if (cart) {
       const orderedIds = createdOrder.orderItems.map((item) =>
         item._id.toString()
