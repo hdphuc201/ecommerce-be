@@ -212,20 +212,6 @@ const deleteProduct = async (req, res, next) => {
   }
 };
 
-const deleteAllProduct = async (req, res, next) => {
-  try {
-    const { passwordAdmin } = req.body;
-    if (!passwordAdmin) {
-      return res.status(400).json({ message: "Password admin là bắt buộc" }); // Thêm return ở đây
-    }
-
-    const result = await productService.deleteAllProduct(passwordAdmin);
-    if (!result.success) return res.status(400).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
 const searchProduct = async (req, res, next) => {
   try {
     const { q } = req.query;
@@ -301,7 +287,6 @@ export const productController = {
   searchProduct,
   getDetailProduct,
   getAllProduct,
-  deleteAllProduct,
   // cate
   getCate,
   createCate,

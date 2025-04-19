@@ -32,12 +32,6 @@ Router.delete(
   isAdmin,
   productController.deleteProduct
 );
-Router.delete(
-  "/delete-all-product",
-  authMiddleware,
-  isAdmin,
-  productController.deleteAllProduct
-);
 
 // Các route không yêu cầu xác thực (public)
 Router.get("/get-detail/:id", productController.getDetailProduct);

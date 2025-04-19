@@ -7,19 +7,6 @@ import streamifier from "streamifier";
 
 const storageProduct = multer.memoryStorage();
 
-// const storageProduct = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     cb(null, "uploads/products/"); // Lưu ảnh vào folder "products"
-//   },
-//   filename: function (req, file, cb) {
-//     const originalName = file.originalname
-//       .normalize("NFD")
-//       .replace(/[\u0300-\u036f]/g, "");
-//     const sanitized = originalName.replace(/[^a-zA-Z0-9.-]/g, "_"); // tránh ký tự lạ
-//     cb(null, `${uuidv4()}-${sanitized}`);
-//   },
-// });
-
 // Upload ảnh cho user
 const storageUser = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -29,12 +16,6 @@ const storageUser = multer.diskStorage({
     cb(null, `${uuidv4()}-${file.originalname}`); // Tên file bao gồm uuid và tên file gốc
   },
 });
-
-// Export các middleware multer cho ảnh product và user
-// export const uploadProduct = multer({
-//   storage: storageProduct,
-//   limits: { fileSize: 5 * 1024 * 1024 },
-// });
 
 export const uploadProduct = multer({
   storage: storageProduct,
@@ -96,10 +77,7 @@ export const handleImageUploadBuffer = (fileBuffer, folder) => {
   });
 };
 
-export const handleMultipleImageUploadBuffer = async (
-  files,
-  type = "products"
-) => {
+export const handleMultipleImageUploadBuffer = async (files, type = "") => {
   const uploads = files.map((file) =>
     handleImageUploadBuffer(file.buffer, type)
   );

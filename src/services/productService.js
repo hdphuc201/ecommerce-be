@@ -94,19 +94,6 @@ const deleteProduct = async (ids) => {
     return { success: false, message: error.message || "Lỗi server" };
   }
 };
-const deleteAllProduct = async () => {
-  try {
-    const result = await Product.deleteMany({});
-    if (result.deletedCount === 0) return { message: "Không có sản phẩm nào" };
-
-    return {
-      message: "Xóa tất cả sản phẩm thành công",
-      deletedCount: result.deletedCount,
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-};
 
 const getDetailProduct = async (id) => {
   try {
@@ -209,7 +196,6 @@ export const productService = {
   createProduct,
   updateProduct,
   deleteProduct,
-  deleteAllProduct,
   getAllProduct,
   getDetailProduct,
   // cate

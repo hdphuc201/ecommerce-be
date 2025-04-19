@@ -28,12 +28,6 @@ Router.delete(
   isAdmin,
   userController.deleteUser
 );
-Router.delete(
-  "/delete-all-user",
-  authMiddleware,
-  isAdmin,
-  userController.deleteAllUsers
-);
 
 Router.get("/getAddress", authMiddleware, userController.getAddress);
 Router.post("/createAddress", authMiddleware, userController.createAddress);

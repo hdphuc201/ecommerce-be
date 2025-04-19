@@ -5,6 +5,7 @@ import { orderRoute } from "./orderRoute";
 import { cartRoute } from "./cartRoute";
 import { chartRoute } from "./chartRoute";
 import { discountRoute } from "./discountRoute";
+import { reviewRoute } from "./reviewRoute";
 
 const Router = express.Router();
 
@@ -14,5 +15,6 @@ Router.use("/api/order", orderRoute);
 Router.use("/api/cart", cartRoute);
 Router.use("/api/chart", chartRoute);
 Router.use("/api/discount", discountRoute);
+Router.use("/api/reviews", reviewRoute);
 
 export { Router };

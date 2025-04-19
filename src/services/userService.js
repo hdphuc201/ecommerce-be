@@ -128,36 +128,10 @@ const updateUser = async (id, data) => {
   }
 };
 
-const deleteAllUsers = async (passwordAdmin) => {
-  try {
-    const admin = await User.findOne({ isAdmin: true });
-    if (!admin)
-      return { success: false, message: "Không tìm thấy tài khoản admin" };
-
-    const isMatch = await bcrypt.compare(passwordAdmin, admin.password);
-    if (!isMatch)
-      return { success: false, message: "Password admin không trùng khớp" };
-
-    const result = await User.deleteMany({ isAdmin: false });
-    // Kiểm tra nếu không có user nào bị xóa
-    if (result.deletedCount === 0) {
-      return { success: false, message: "Không có người dùng nào để xóa" };
-    }
-
-    return {
-      success: true,
-      message: "Xóa tất cả user thành công",
-      deletedCount: result.deletedCount,
-    };
-  } catch (error) {
-    return { success: false, message: error.message || "Lỗi server" };
-  }
-};
 
 export const userService = {
   registerUser,
   loginUser,
   updateUser,
   createUser,
-  deleteAllUsers,
 };

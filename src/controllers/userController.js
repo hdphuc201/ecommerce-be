@@ -415,20 +415,6 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-const deleteAllUsers = async (req, res, next) => {
-  try {
-    const { passwordAdmin } = req.body;
-    if (!passwordAdmin) {
-      return res.status(400).json({ message: "Password admin là bắt buộc" });
-    }
-
-    const result = await userService.deleteAllUsers(passwordAdmin);
-    if (!result.success) return res.status(400).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
 const getAddress = async (req, res, next) => {
   try {
     const id = req.user._id;
@@ -606,7 +592,6 @@ export const userController = {
   createUser,
   getAllUser,
   deleteUser,
-  deleteAllUsers,
   getAddress,
   createAddress,
   removeAddress,
