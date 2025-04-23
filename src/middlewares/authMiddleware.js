@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { env } from "~/config/environment";
+import User from "~/models/userModel";
 import { jwtService } from "~/services/jwtService";
 
 // verify token
@@ -12,15 +13,14 @@ export const authMiddleware = async (req, res, next) => {
       : req.headers.authorization?.split(" ")[1];
 
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized" }); // Thêm return
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     jwt.verify(token, env.ACCESS_TOKEN_SECRET, async (err, user) => {
-      // set token ở local
       if (err && !env.COOKIE_MODE) {
-        return res.status(403).json({ message: "Token is not valid" }); // Thêm return
+        return res.status(403).json({ message: "Token is not valid" });
       }
-      // set token ở cookie
+
       if (err && env.COOKIE_MODE) {
         const refreshToken = req.cookies?.refresh_token;
         if (!refreshToken) {
@@ -29,7 +29,6 @@ export const authMiddleware = async (req, res, next) => {
             .json({ message: "Unauthorized - No refresh tokens found" });
         }
 
-        // Verify refresh token
         jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET, (err, user) => {
           if (err) {
             return res.status(403).json({
@@ -38,13 +37,11 @@ export const authMiddleware = async (req, res, next) => {
             });
           }
 
-          // Generate new access token
           const newAccessToken = jwtService?.generateAccessToken(user);
 
-          // Set new access token in response
           res.cookie("access_token", newAccessToken, {
             httpOnly: true,
-            secure: true, // Chỉ bật Secure nếu chạy trên HTTPS
+            secure: true,
             sameSite: "None",
           });
 
@@ -53,9 +50,9 @@ export const authMiddleware = async (req, res, next) => {
         });
         return;
       }
-      const redisClient = req.redisClient; // Lấy redis từ middleware
 
       if (env.COOKIE_MODE) {
+        const redisClient = req.redisClient;
         const isBlacklisted = await redisClient.get(
           `TOKEN_BLACKLIST_${user?._id}_${user.jit}`
         );
@@ -63,22 +60,6 @@ export const authMiddleware = async (req, res, next) => {
           return res.status(401).json({ message: "Token revoked" });
         }
       }
-
-      if (user.logoutDevice) {
-        const changedPasswordTimestamp = await redisClient.get(
-          `TOKEN_IAT_AVAILABLE_${user?._id}`
-        );
-        if (
-          changedPasswordTimestamp &&
-          user.iat < parseInt(changedPasswordTimestamp)
-        ) {
-          return res.status(401).json({
-            message: "Mật khẩu đã thay đổi, vui long đăng nhập lại",
-            expired: true,
-          });
-        }
-      }
-
       req.user = user;
       next();
     });

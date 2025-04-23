@@ -77,7 +77,7 @@ const createUser = async (newUser) => {
   }
 };
 
-const updateUser = async (id, data, redisClient) => {
+const updateUser = async (id, data) => {
   try {
     const { name, phone, password, newPassword, address, avatar } = data;
 
@@ -108,12 +108,6 @@ const updateUser = async (id, data, redisClient) => {
       if (newPassword === password) {
         throw new Error("Mật khẩu mới không được trùng với mật khẩu cũ");
       }
-
-      // lưu thời gian đổi mật khẩu vào redis để check nếu thời gian đổi mật khẩu lớn hơn thời gian đăng nhập thì
-      // account ở thiết bị cũ sẽ không còn hiệu lực nữa
-      const changePasswordDate = Math.floor(Date.now() / 1000);
-      const invalidationKey = `TOKEN_IAT_AVAILABLE_${id}`;
-      await redisClient.set(invalidationKey, changePasswordDate);
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       updateData.password = hashedPassword;
