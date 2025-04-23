@@ -337,6 +337,7 @@ const updateUser = async (req, res, next) => {
     // nếu req?.body (từ admin) không có thì lấy user id (từ user)
     const { _id, isActive, isAdmin, userId } = req.body;
     const id = _id ? _id : req?.user._id;
+    const redisClient = req.redisClient; // Lấy redis từ middleware
     if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
 
     if (isAdmin === true) {
@@ -354,7 +355,7 @@ const updateUser = async (req, res, next) => {
       });
     }
 
-    const result = await userService.updateUser(id, req.body);
+    const result = await userService.updateUser(id, req.body, redisClient);
     if (!result.success) return res.status(400).json(result);
     return res.status(200).json(result);
   } catch (error) {

@@ -53,8 +53,9 @@ export const authMiddleware = async (req, res, next) => {
         });
         return;
       }
+      const redisClient = req.redisClient; // Lấy redis từ middleware
+
       if (env.COOKIE_MODE) {
-        const redisClient = req.redisClient; // Lấy redis từ middleware
         const isBlacklisted = await redisClient.get(
           `TOKEN_BLACKLIST_${user?._id}_${user.jit}`
         );
@@ -62,6 +63,22 @@ export const authMiddleware = async (req, res, next) => {
           return res.status(401).json({ message: "Token revoked" });
         }
       }
+
+      if (user.logoutDevice) {
+        const changedPasswordTimestamp = await redisClient.get(
+          `TOKEN_IAT_AVAILABLE_${user?._id}`
+        );
+        if (
+          changedPasswordTimestamp &&
+          user.iat < parseInt(changedPasswordTimestamp)
+        ) {
+          return res.status(401).json({
+            message: "Mật khẩu đã thay đổi, vui long đăng nhập lại",
+            expired: true,
+          });
+        }
+      }
+
       req.user = user;
       next();
     });

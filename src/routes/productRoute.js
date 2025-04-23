@@ -21,11 +21,7 @@ Router.put(
   uploadProduct.array("image"),
   productController.updateProduct
 );
-Router.put(
-  "/update-stock",
-  // authMiddleware,
-  productController.updateProductStock
-);
+Router.put("/update-stock", productController.updateProductStock);
 Router.delete(
   "/delete-product",
   authMiddleware,
