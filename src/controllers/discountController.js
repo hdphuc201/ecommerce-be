@@ -4,73 +4,33 @@ import Order from "~/models/orderModel";
 // ✅ Tạo mã giảm giá mới
 const createDiscount = async (req, res, next) => {
   try {
-    const validations = {
-      code: (value) =>
-        typeof value === "string" &&
-        value.trim() !== "" &&
-        /^[A-Z0-9]+$/.test(value.trim()),
-      description: (value) =>
-        typeof value === "string" && value.trim().length > 0,
-      type: (value) => ["percent", "fixed"].includes(value),
-      value: (value, type) => {
-        const num = Number(value);
-        if (type === "percent") return num >= 0 && num <= 100;
-        if (type === "fixed") return num > 0;
-        return false;
-      },
-      startDate: (value) => !!value && !isNaN(new Date(value).getTime()),
-      endDate: (value) => !!value && !isNaN(new Date(value).getTime()),
-      dateRangeValid: (start, end) => new Date(start) < new Date(end),
-    };
-
-    for (const item in validations) {
-      if (item === "code" && !validations[item](req.body.code)) {
-        return res.status(400).json({
-          success: false,
-          message: "Mã phải viết hoa và không ký tự đặc biệt",
-        });
-      }
-      if (
-        item === "value" &&
-        !validations[item](req.body.value, req.body.type)
-      ) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Giá trị giảm đối đa 100" });
-      }
-
-      if (item === "dateRangeValid") continue;
-
-      if (!["value"].includes(item) && !validations[item](req.body[item])) {
-        return res
-          .status(400)
-          .json({ success: false, message: `${item} sai định dạng` });
-      }
-    }
-
-    if (!validations.dateRangeValid(req.body.startDate, req.body.endDate)) {
+    // Kiểm tra mã đã tồn tại chưa
+    const existing = await Discount.findOne({
+      code: req.body.code?.trim().toUpperCase(),
+    });
+    if (existing) {
       return res.status(400).json({
         success: false,
-        message: "Ngày bắt đầu phải nhỏ hơn ngày kết thúc",
+        message: "Mã giảm giá đã tồn tại",
       });
     }
 
-    const existing = await Discount.findOne({
-      code: req.body.code.trim().toUpperCase(),
-    });
-    if (existing) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Mã giảm giá đã tồn tại" });
-    }
-
     const discount = await Discount.create(req.body);
+
     res.status(201).json({
       success: true,
       message: "Tạo mã giảm giá thành công",
       data: discount,
     });
   } catch (error) {
+    if (error.name === "ValidationError") {
+      // Lỗi từ schema validation
+      const messages = Object.values(error.errors).map((e) => e.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(" | "),
+      });
+    }
     next(error);
   }
 };

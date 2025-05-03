@@ -20,20 +20,6 @@ const registerUser = async (req, res, next) => {
       });
     }
 
-    const validators = {
-      name: (val) => val,
-      email: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
-      password: (val) => val,
-    };
-
-    for (const filed in validators) {
-      if (!validators[filed](req.body[filed])) {
-        return res
-          .status(400)
-          .json({ message: `${filed} không hợp lệ hoặc thiếu` });
-      }
-    }
-
     if (code && code === "") {
       return res.status(400).json({ message: "Vui lòng nhập mã xác nhận" });
     }
@@ -93,26 +79,24 @@ const verifyEmail = async (req, res) => {
 
 const loginUser = async (req, res, next) => {
   try {
-    const { email, password, isActive } = req.body;
+    const { isActive, password } = req.body;
 
     if (isActive === false) {
       return res
         .status(400)
         .json({ success: false, message: "Tài khoản đã bị khóa" });
     }
-    // Validate đầu vào
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return res.status(400).json({ message: "Email không hợp lệ hoặc thiếu" });
 
-    if (!password)
-      return res.status(400).json({ message: "Password không được bỏ trống" });
+    if (!password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Mật khẩu không được bỏ trống" });
+    }
 
     // Gọi service xử lý
     const response = await userService?.loginUser(req.body);
 
-    if (!response.success) {
-      return res.status(400).json(response);
-    }
+    if (!response.success) return res.status(400).json(response);
 
     // Nếu dùng cookie mode
     if (env.COOKIE_MODE) {
@@ -259,7 +243,7 @@ const logoutUser = async (req, res, next) => {
   }
 };
 
-const refreshToken = async (req, res, next) => {
+const refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
   try {
     if (!refreshToken) {
@@ -299,20 +283,6 @@ const createUser = async (req, res, next) => {
         error: true,
         message: "Email đã tồn tại. Vui lòng chọn email khác.",
       });
-    }
-
-    const validators = {
-      name: (val) => val,
-      email: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
-      password: (val) => val,
-    };
-
-    for (const filed in validators) {
-      if (!validators[filed](req.body[filed])) {
-        return res
-          .status(400)
-          .json({ message: `${filed} không hợp lệ hoặc thiếu` });
-      }
     }
 
     if (password !== confirmPassword) {
@@ -448,20 +418,6 @@ const createAddress = async (req, res, next) => {
       return res
         .status(401)
         .json({ success: false, message: "Chưa đăng nhập" });
-    }
-
-    const validators = {
-      houseNumber: (val) => !!val,
-      district: (val) => !!val,
-      city: (val) => !!val,
-    };
-
-    for (const field in validators) {
-      if (!validators[field](req.body[field])) {
-        return res
-          .status(400)
-          .json({ message: `${field} không hợp lệ hoặc thiếu` });
-      }
     }
 
     if (defaultAddress) {

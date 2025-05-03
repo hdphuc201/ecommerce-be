@@ -51,6 +51,7 @@ export const authMiddleware = async (req, res, next) => {
         return;
       }
 
+      // nếu lưu token vào cookie
       if (env.COOKIE_MODE) {
         const redisClient = req.redisClient;
         const isBlacklisted = await redisClient.get(

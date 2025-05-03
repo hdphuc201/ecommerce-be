@@ -29,7 +29,7 @@ const loginUser = async ({ email, password }) => {
     const user = await User.findOne({ email });
     if (!user) throw new Error("Email không tồn tại");
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Mật khẩu không đúng");
 
     const access_token = jwtService?.generateAccessToken(user);

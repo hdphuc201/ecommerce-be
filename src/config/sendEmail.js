@@ -1,5 +1,5 @@
 // Gửi email qua Nodemailer
-import nodemailer from "nodemailer"; // ✅ Chuẩn ES6 module
+import nodemailer from "nodemailer";
 import { env } from "./environment";
 import { formattedDate } from "~/utils/formatDate";
 

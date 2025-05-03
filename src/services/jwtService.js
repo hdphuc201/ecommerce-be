@@ -8,7 +8,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { _id: user?._id, isAdmin: user?.isAdmin, jit: uuidv4() },
     env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "7d" } // Token hết hạn sau 7 ngày
+    { expiresIn: "7d" } 
   );
 };
 
@@ -17,7 +17,7 @@ const generateRefreshToken = (user) => {
   return jwt.sign(
     { _id: user?._id, isAdmin: user?.isAdmin, jit: uuidv4() },
     env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "365d" } // Token hết hạn sau 365 ngày
+    { expiresIn: "365d" }
   );
 };
 
