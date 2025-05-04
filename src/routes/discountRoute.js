@@ -1,4 +1,5 @@
 import express from "express";
+
 import { discountController } from "~/controllers/discountController";
 import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware";
 

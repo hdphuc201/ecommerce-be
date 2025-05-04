@@ -1,6 +1,7 @@
 import express from "express";
-import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware"; // Import authMiddleware
+
 import { chartController } from "~/controllers/chartController";
+import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware"; // Import authMiddleware
 
 const Router = express.Router();
 Router.get(

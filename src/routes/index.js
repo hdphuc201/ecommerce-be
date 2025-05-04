@@ -1,11 +1,12 @@
 import express from "express";
-import { userRoute } from "./userRoute";
-import { productRoute } from "./productRoute";
-import { orderRoute } from "./orderRoute";
+
 import { cartRoute } from "./cartRoute";
 import { chartRoute } from "./chartRoute";
 import { discountRoute } from "./discountRoute";
+import { orderRoute } from "./orderRoute";
+import { productRoute } from "./productRoute";
 import { reviewRoute } from "./reviewRoute";
+import { userRoute } from "./userRoute";
 
 const Router = express.Router();
 

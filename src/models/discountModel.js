@@ -4,45 +4,23 @@ const discountSchema = new mongoose.Schema(
   {
     code: {
       type: String,
-      required: [true, "Mã giảm giá là bắt buộc"],
+      required: true,
       unique: true,
       uppercase: true,
       trim: true,
-      validate: {
-        validator: (val) => /^[A-Z0-9]+$/.test(val),
-        message:
-          "Mã giảm giá chỉ bao gồm chữ in hoa và số, không ký tự đặc biệt",
-      },
     },
     description: {
       type: String,
-      required: [true, "Mô tả là bắt buộc"],
+      required: true,
       trim: true,
     },
     type: {
       type: String,
-      enum: {
-        values: ["percent", "fixed"],
-        message: "Loại phải là 'percent' hoặc 'fixed'",
-      },
-      required: [true, "Loại giảm giá là bắt buộc"],
+      required: true,
     },
     value: {
       type: Number,
-      required: [true, "Giá trị là bắt buộc"],
-      validate: {
-        validator: function (val) {
-          if (this.type === "percent") return val >= 0 && val <= 100;
-          if (this.type === "fixed") return val > 0;
-          return false;
-        },
-        message: function () {
-          if (this.type === "percent")
-            return "Phần trăm giảm giá phải từ 0 đến 100";
-          if (this.type === "fixed") return "Giá trị cố định phải lớn hơn 0";
-          return "Giá trị giảm giá không hợp lệ";
-        },
-      },
+      required: true,
     },
     minOrderValue: {
       type: Number,
@@ -62,17 +40,11 @@ const discountSchema = new mongoose.Schema(
     },
     startDate: {
       type: Date,
-      required: [true, "Ngày bắt đầu là bắt buộc"],
+      required: true,
     },
     endDate: {
       type: Date,
-      required: [true, "Ngày kết thúc là bắt buộc"],
-      validate: {
-        validator: function (val) {
-          return this.startDate && val > this.startDate;
-        },
-        message: "Ngày kết thúc phải sau ngày bắt đầu",
-      },
+      required: true,
     },
   },
   {

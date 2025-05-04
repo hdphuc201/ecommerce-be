@@ -5,33 +5,24 @@ import mongoose from "mongoose";
 const addressSchema = new mongoose.Schema({
   houseNumber: {
     type: String,
-    required: [true, "Số nhà không hợp lệ hoặc thiếu"],
+    required: true,
   },
-  district: { type: String, required: [true, "Quận không hợp lệ hoặc thiếu"] },
-  city: { type: String, required: [true, "Thành phố không hợp lệ hoặc thiếu"] },
+  district: { type: String, required: true },
+  city: { type: String, required: true },
   defaultAddress: { type: Boolean, default: false }, // Mặc định là false
 });
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: [true, "Tên không hợp lệ"] },
+    name: { type: String, required: true },
     email: {
       type: String,
-      required: [true, "Email không hợp lệ"],
+      required: true,
       unique: true,
       lowercase: true,
-      trim: [true, "Email không được bỏ trống"],
-      validate: {
-        validator: (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-        message: "Email không đúng định dạng",
-      },
     },
     phone: { type: String },
-    password: {
-      type: String,
-      required: [true, "Mật khẩu không hợp lệ"],
-      minlength: [6, "Mật khẩu ít nhất 6 ký tự"],
-    },
+    password: { type: String },
     avatar: { type: String },
     address: [addressSchema],
     googleId: { type: String },

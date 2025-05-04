@@ -1,7 +1,9 @@
 // Gửi email qua Nodemailer
 import nodemailer from "nodemailer";
-import { env } from "./environment";
+
 import { formattedDate } from "~/utils/formatDate";
+
+import { env } from "./environment";
 
 const formatNumber = (number) => number?.toLocaleString("de-DE");
 
@@ -47,8 +49,8 @@ export const sendInforOrderEmail = async (email, ordered) => {
       </p>
       <p style="font-size: 16px; margin-bottom: 5px;">
         <strong>Phương thức giao hàng:</strong> ${
-          ordered?.deliveryMethod
-        } - ${formatNumber(ordered?.shippingFee || 0)}₫
+  ordered?.deliveryMethod
+} - ${formatNumber(ordered?.shippingFee || 0)}₫
       </p>
       <p style="font-size: 16px; margin-bottom: 5px;">
         <strong>Phương thức thanh toán:</strong> ${ordered?.paymentMethod}
@@ -65,8 +67,8 @@ export const sendInforOrderEmail = async (email, ordered) => {
       </p>
       <ul style="list-style-type: none; padding-left: 0;">
         ${ordered?.orderItems?.map(
-          (item, index) =>
-            `<li
+    (item, index) =>
+      `<li
               key=${item?._id}
               style="display: flex; align-items: center; margin-bottom: 10px;"
             >
@@ -79,14 +81,14 @@ export const sendInforOrderEmail = async (email, ordered) => {
               />
               <div>
                 <p style="font-size: 16px; margin-bottom: 2px;">${
-                  item?.name
-                }</p>
+  item?.name
+}</p>
                 <p style="font-size: 14px; color: #555;">
                   ${formatNumber(item?.price)}₫ x ${item?.quantity || 0}
                 </p>
               </div>
             </li>`
-        )}
+  )}
       </ul>
     </div>
   `,

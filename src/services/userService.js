@@ -1,13 +1,15 @@
-import User from "~/models/userModel";
 import bcrypt from "bcrypt";
-import { jwtService } from "./jwtService";
+
 import { env } from "~/config/environment";
+import User from "~/models/userModel";
+
+import { jwtService } from "./jwtService";
 
 const registerUser = async (newUser) => {
   try {
     const { name, email, password, isAdmin } = newUser;
 
-    const hash = bcrypt.hashSync(password, 10);
+    const hash = await bcrypt.hash(password, 10);
     const createdUser = await User.create({
       name,
       email,
@@ -29,7 +31,7 @@ const loginUser = async ({ email, password }) => {
     const user = await User.findOne({ email });
     if (!user) throw new Error("Email không tồn tại");
 
-    const isMatch = bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Mật khẩu không đúng");
 
     const access_token = jwtService?.generateAccessToken(user);
@@ -57,7 +59,7 @@ const createUser = async (newUser) => {
   try {
     const { avatar, name, email, phone, password, isAdmin } = newUser;
 
-    const hash = bcrypt.hashSync(password, 10);
+    const hash = await bcrypt.hashSync(password, 10);
     const createdUser = await User.create({
       avatar,
       name,

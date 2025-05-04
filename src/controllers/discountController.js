@@ -4,18 +4,90 @@ import Order from "~/models/orderModel";
 // ✅ Tạo mã giảm giá mới
 const createDiscount = async (req, res, next) => {
   try {
-    // Kiểm tra mã đã tồn tại chưa
+    const {
+      code,
+      description,
+      type,
+      value,
+      minOrderValue,
+      usageLimit,
+      startDate,
+      endDate,
+    } = req.body;
+
+    const errors = [];
+
+    // 1. Validate code
+    if (!code || typeof code !== "string") {
+      errors.push("Mã giảm giá là bắt buộc");
+    } else if (!/^[A-Z0-9]+$/.test(code.trim().toUpperCase())) {
+      errors.push(
+        "Mã giảm giá chỉ bao gồm chữ in hoa và số, không ký tự đặc biệt"
+      );
+    }
+
+    // 2. Kiểm tra trùng mã
     const existing = await Discount.findOne({
-      code: req.body.code?.trim().toUpperCase(),
+      code: code?.trim().toUpperCase(),
     });
     if (existing) {
+      errors.push("Mã giảm giá đã tồn tại");
+    }
+
+    // 3. Validate description
+    if (!description || typeof description !== "string") {
+      errors.push("Mô tả là bắt buộc");
+    }
+
+    // 4. Validate type
+    if (!["percent", "fixed"].includes(type)) {
+      errors.push("Loại phải là 'percent' hoặc 'fixed'");
+    }
+
+    if (type === "percent" && (value < 0 || value > 100)) {
+      errors.push("Phần trăm giảm giá phải từ 0 đến 100");
+    }
+    if (type === "fixed" && value <= 0) {
+      errors.push("Giá trị cố định phải lớn hơn 0");
+    }
+
+
+    // 5. Validate value
+    if (minOrderValue && minOrderValue < 1000) {
+      errors.push("Giá trị đơn hàng tối thiểu là 1.000₫");
+    }
+
+    // 6. Validate ngày bắt đầu và kết thúc
+    if (!startDate || !endDate) {
+      errors.push("Ngày bắt đầu và kết thúc là bắt buộc");
+    } else {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (end <= start) {
+        errors.push("Ngày kết thúc phải sau ngày bắt đầu");
+      }
+    }
+    // Nếu có lỗi, trả luôn
+    if (errors.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Mã giảm giá đã tồn tại",
+        message: errors.join(" | "),
       });
     }
 
-    const discount = await Discount.create(req.body);
+    // Tạo mới
+    const discount = await Discount.create({
+      code: code.trim().toUpperCase(),
+      description,
+      type,
+      value,
+      minOrderValue: minOrderValue ?? 0,
+      usageLimit: usageLimit ?? 999,
+      usedCount: 0,
+      isActive: true,
+      startDate,
+      endDate,
+    });
 
     res.status(201).json({
       success: true,
@@ -23,14 +95,6 @@ const createDiscount = async (req, res, next) => {
       data: discount,
     });
   } catch (error) {
-    if (error.name === "ValidationError") {
-      // Lỗi từ schema validation
-      const messages = Object.values(error.errors).map((e) => e.message);
-      return res.status(400).json({
-        success: false,
-        message: messages.join(" | "),
-      });
-    }
     next(error);
   }
 };
@@ -40,9 +104,6 @@ const getAllDiscounts = async (req, res, next) => {
   const { code } = req.query;
   try {
     const filter = {};
-    // if (code) {
-    //   filter.code = code.toUpperCase().trim(); // chuẩn hóa code để so sánh
-    // }
     if (code) filter.code = { $regex: new RegExp(code, "i") };
     const discounts = await Discount.find(filter).sort({ createdAt: -1 });
     if (!discounts) {

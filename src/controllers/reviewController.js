@@ -1,4 +1,3 @@
-// src/controllers/review.controller.js
 import cloudinary from "~/config/cloudinary";
 import { extractPublicIdFromUrl } from "~/config/extractPublicId";
 import { handleMultipleImageUploadBuffer } from "~/config/multer";

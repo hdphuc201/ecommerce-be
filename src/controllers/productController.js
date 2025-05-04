@@ -1,3 +1,5 @@
+import { v2 as cloudinary } from "cloudinary";
+
 import { env } from "~/config/environment";
 import { extractPublicIdFromUrl } from "~/config/extractPublicId";
 import {
@@ -8,7 +10,6 @@ import Category from "~/models/categoryModel";
 import Product from "~/models/productModel";
 import { productService } from "~/services/productService";
 import removeVietnameseTones from "~/utils/removeVietnameseTones";
-import { v2 as cloudinary } from "cloudinary";
 
 const createProduct = async (req, res, next) => {
   try {

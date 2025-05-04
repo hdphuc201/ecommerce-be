@@ -1,11 +1,12 @@
-import jwt from "jsonwebtoken";
-import { env } from "~/config/environment";
-import User from "~/models/userModel";
-import { userService } from "~/services/userService";
 import bcrypt from "bcrypt";
-import { sendVerificationEmail } from "~/config/sendEmail";
 import { OAuth2Client } from "google-auth-library";
+import jwt from "jsonwebtoken";
+
+import { env } from "~/config/environment";
+import { sendVerificationEmail } from "~/config/sendEmail";
+import User from "~/models/userModel";
 import { jwtService } from "~/services/jwtService";
+import { userService } from "~/services/userService";
 
 const registerUser = async (req, res, next) => {
   try {
@@ -208,11 +209,11 @@ const loginGoogle = async (req, res, next) => {
       ...(env.COOKIE_MODE
         ? {}
         : {
-            token: {
-              access_token,
-              refresh_token,
-            },
-          }),
+          token: {
+            access_token,
+            refresh_token,
+          },
+        }),
     });
   } catch (error) {
     console.error("Lỗi loginGoogle:", error);

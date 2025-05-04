@@ -1,4 +1,5 @@
 import { createClient } from "redis";
+
 import { env } from "./environment";
 
 let redisClient;
@@ -24,4 +25,4 @@ const GET_REDIS_CLIENT = () => {
   return redisClient;
 };
 
-export { CONNECT_REDIS, CLOSE_REDIS, GET_REDIS_CLIENT };
+export { CLOSE_REDIS, CONNECT_REDIS, GET_REDIS_CLIENT };

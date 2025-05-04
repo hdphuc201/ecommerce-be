@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 import { sendInforOrderEmail } from "~/config/sendEmail";
 import Cart from "~/models/cartModel";
 import Discount from "~/models/discountModel";
@@ -20,7 +21,6 @@ const getOrder = async (req, res, next) => {
 
     return res.status(200).json(listOrder);
   } catch (error) {
-    console.error("Lỗi getOrder:", error);
     res.status(500).json({
       success: false,
       message: "Lỗi server",
@@ -178,9 +178,7 @@ const createOrder = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Đặt hàng thành công${
-        !req.body._id ? ", theo dõi đơn hàng qua Email" : ""
-      }`,
+      message: 'Đặt hàng thành công!',
       createdOrder,
     });
   } catch (error) {

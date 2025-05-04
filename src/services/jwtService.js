@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
-import { env } from "~/config/environment";
 import { v4 as uuidv4 } from "uuid";
+
+import { env } from "~/config/environment";
 
 // Chỉ gửi thông tin cần thiết vào payload để tăng cường bảo mật
 const generateAccessToken = (user) => {
@@ -8,7 +9,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { _id: user?._id, isAdmin: user?.isAdmin, jit: uuidv4() },
     env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "7d" } 
+    { expiresIn: "7d" }
   );
 };
 

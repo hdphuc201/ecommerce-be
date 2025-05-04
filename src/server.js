@@ -1,14 +1,16 @@
-import express from "express";
-import exitHook from "async-exit-hook";
-import { CONNECT_DB, ClOSE_DB } from "./config/mongodb";
-import { env } from "./config/environment";
-import { Router } from "./routes";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import { corsOptions } from "./config/cors";
-import { CLOSE_REDIS, CONNECT_REDIS, GET_REDIS_CLIENT } from "./config/redis";
 import "dotenv/config";
+
+import exitHook from "async-exit-hook";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
 import path from "path";
+
+import { corsOptions } from "./config/cors";
+import { env } from "./config/environment";
+import { ClOSE_DB, CONNECT_DB } from "./config/mongodb";
+import { CLOSE_REDIS, CONNECT_REDIS, GET_REDIS_CLIENT } from "./config/redis";
+import { Router } from "./routes";
 
 const app = express();
 
@@ -34,7 +36,7 @@ const START_SERVER = () => {
 
   app.listen(port, host, () => {
     console.log(
-      `${
+      `3. ${
         env.BUILD_MODE === "production" ? "Production" : "Dev"
       }: Server running at ${host ?? ""}:${port}`
     );
@@ -53,9 +55,9 @@ process.on("SIGTERM", exitHook);
 (async () => {
   try {
     await CONNECT_DB();
-    console.log("Connected to MongoDB!");
+    console.log("1. Connected to MongoDB!");
     await CONNECT_REDIS();
-    console.log("Connected to Redis!");
+    console.log("2. Connected to Redis!");
 
     START_SERVER();
   } catch (error) {

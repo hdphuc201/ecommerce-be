@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 import removeVietnameseTones from "~/utils/removeVietnameseTones";
 
 const productSchema = new mongoose.Schema(

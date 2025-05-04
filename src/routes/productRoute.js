@@ -1,4 +1,5 @@
 import express from "express";
+
 import { uploadProduct } from "~/config/multer";
 import { productController } from "~/controllers/productController";
 import { authMiddleware, isAdmin } from "~/middlewares/authMiddleware";

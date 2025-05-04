@@ -1,8 +1,9 @@
 import multer from "multer";
+import streamifier from "streamifier";
 import { v4 as uuidv4 } from "uuid";
+
 import cloudinary from "./cloudinary"; // Đảm bảo cloudinary đã cấu hình đúng
 import { env } from "./environment"; // Lấy môi trường
-import streamifier from "streamifier";
 
 // Upload ảnh cho sản phẩm
 const storageProduct = multer.memoryStorage();

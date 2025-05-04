@@ -1,6 +1,7 @@
 // NOTE: (Muốn hiểu rõ hơn về code trong file này thì vui lòng xem video 55 trong bộ MERN Stack trên kênh Youtube của mình.)
 /* eslint-disable no-unused-vars */
 import { StatusCodes } from "http-status-codes";
+
 import { env } from "~/config/environment";
 
 // Middleware xử lý lỗi tập trung trong ứng dụng Back-end NodeJS (ExpressJS)
