@@ -31,7 +31,6 @@ const addWishlist = async (req, res) => {
 
     let wishlist = await Wishlist.findOne({ userId: req.user._id });
 
-    console.log('wishlist', wishlist)
     if (wishlist) {
       const isExists = wishlist.products.some(
         (id) => id.toString() === productId
