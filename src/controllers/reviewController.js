@@ -1,3 +1,5 @@
+import { StatusCodes } from "http-status-codes";
+
 import cloudinary from "~/config/cloudinary";
 import { extractPublicIdFromUrl } from "~/config/extractPublicId";
 import { handleMultipleImageUploadBuffer } from "~/config/multer";
@@ -21,7 +23,7 @@ const addReview = async (req, res, next) => {
       await removeImagesFromCloudinary(publicIds);
     } catch (error) {
       return res
-        .status(500)
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ success: false, message: "Không thể xóa ảnh", error });
     }
   }
@@ -46,7 +48,7 @@ const addReview = async (req, res, next) => {
       const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
       if (diffDays > 3) {
-        return res.status(400).json({
+        return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
           message: "Quá hạn sửa đánh giá (sau 3 ngày)",
         });
@@ -77,7 +79,7 @@ const addReview = async (req, res, next) => {
     product.rating = avgRating;
     await product.save();
 
-    return res.status(201).json({
+    return res.status(StatusCodes.OK).json({
       success: true,
       message: existed ? "Đã cập nhật đánh giá" : "Đánh giá thành công!",
     });
@@ -136,10 +138,10 @@ const updateReview = async (req, res, next) => {
 
     const review = await Review.findById(reviewId);
     if (!review) {
-      return res.status(404).json({ message: "Không tìm thấy review" });
+      return res.status(StatusCodes.NOT_FOUND).json({ message: "Không tìm thấy review" });
     }
     if (review.user.toString() !== userId.toString()) {
-      return res.status(403).json({ message: "Không có quyền sửa" });
+      return res.status(StatusCodes.FORBIDDEN).json({ message: "Không có quyền sửa" });
     }
 
     review.rating = rating ?? review.rating;
@@ -156,13 +158,12 @@ const updateReview = async (req, res, next) => {
 const deleteAllReviews = async (req, res) => {
   try {
     const result = await Review.deleteMany({});
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Đã xóa toàn bộ review thành công.",
       deletedCount: result.deletedCount,
     });
   } catch (err) {
-    console.error("Lỗi khi xóa toàn bộ review:", err);
-    res.status(500).json({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       message: "Xảy ra lỗi khi xóa toàn bộ review.",
       error: err.message,
     });

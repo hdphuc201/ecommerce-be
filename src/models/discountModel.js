@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import { model, Schema } from "mongoose";
 
-const discountSchema = new mongoose.Schema(
+const discountSchema = new Schema(
   {
     code: {
       type: String,
@@ -52,6 +52,6 @@ const discountSchema = new mongoose.Schema(
   }
 );
 
-const Discount = mongoose.model("Discount", discountSchema);
+const Discount = model("Discount", discountSchema);
 
 export default Discount;

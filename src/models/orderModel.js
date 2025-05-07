@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 // Định nghĩa schema cho từng sản phẩm trong đơn hàng
-const orderItemSchema = new mongoose.Schema({
+const orderItemSchema = new Schema({
   productId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Types.ObjectId,
     ref: "Product",
     required: true,
   },
@@ -14,10 +14,10 @@ const orderItemSchema = new mongoose.Schema({
 });
 
 // Định nghĩa schema cho đơn hàng
-const orderSchema = new mongoose.Schema(
+const orderSchema = new Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "User",
       required: true,
     }, // Tham chiếu đến User
@@ -44,6 +44,6 @@ const orderSchema = new mongoose.Schema(
 );
 
 // Tạo model cho đơn hàng
-const Order = mongoose.model("Order", orderSchema);
+const Order = model("Order", orderSchema);
 
 export default Order;

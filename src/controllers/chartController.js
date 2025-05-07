@@ -1,3 +1,5 @@
+import { StatusCodes } from "http-status-codes";
+
 import Order from "~/models/orderModel";
 // Lấy giỏ hàng của user
 const getRevenueStatistics = async (req, res) => {
@@ -10,7 +12,7 @@ const getRevenueStatistics = async (req, res) => {
     groupBy = { $week: "$createdAt" };
   } else {
     return res
-      .status(400)
+      .status(StatusCodes.BAD_REQUEST)
       .json({ success: false, message: "Loại thống kê không hợp lệ" });
   }
 
@@ -49,9 +51,9 @@ const getRevenueStatistics = async (req, res) => {
         };
       });
 
-    res.status(200).json({ success: true, data: formatted });
+    res.status(StatusCodes.OK).json({ success: true, data: formatted });
   } catch (err) {
-    res.status(500).json({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Lỗi khi lấy dữ liệu",
       error: err.message,

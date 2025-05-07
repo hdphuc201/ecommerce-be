@@ -1,3 +1,4 @@
+import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 
 import { sendInforOrderEmail } from "~/config/sendEmail";
@@ -11,7 +12,7 @@ const getOrder = async (req, res, next) => {
     const userId = req.user?._id;
 
     if (!userId) {
-      return res.status(401).json({
+      return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
         message: "Không xác định được người dùng",
       });
@@ -19,9 +20,9 @@ const getOrder = async (req, res, next) => {
 
     const listOrder = await Order.find({ userId });
 
-    return res.status(200).json(listOrder);
+    return res.status(StatusCodes.OK).json(listOrder);
   } catch (error) {
-    res.status(500).json({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Lỗi server",
     });
@@ -45,7 +46,7 @@ const getOrderAdmin = async (req, res, next) => {
       .limit(limit || 4)
       .skip(offset);
 
-    return res.status(200).json({
+    return res.status(StatusCodes.OK).json({
       success: true,
       data: offset >= totalOrders ? [] : orders,
       total: totalOrders,
@@ -54,7 +55,7 @@ const getOrderAdmin = async (req, res, next) => {
       length: offset >= totalOrders ? 0 : orders.length,
     });
   } catch (error) {
-    res.status(500).json(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
   }
 };
 
@@ -66,7 +67,7 @@ const createOrder = async (req, res) => {
     // 1. Kiểm tra địa chỉ
     if (!orderData.shippingAddress) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Cập nhật địa chỉ" });
     }
 
@@ -76,19 +77,19 @@ const createOrder = async (req, res) => {
       const isValidPhone = /^\d{10}$/.test(phone);
 
       if (!name) {
-        return res.status(400).json({
+        return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
           message: "Tên không hợp lệ",
         });
       }
       if (!isValidEmail) {
-        return res.status(400).json({
+        return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
           message: "Email không hợp lệ",
         });
       }
       if (!isValidPhone) {
-        return res.status(400).json({
+        return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
           message: "Số điện thoại không hợp lệ",
         });
@@ -102,7 +103,7 @@ const createOrder = async (req, res) => {
     // 3. Validate userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "User ID không hợp lệ" });
     }
 
@@ -120,7 +121,7 @@ const createOrder = async (req, res) => {
       const discount = await Discount.findOne({ code: orderData.discount });
 
       if (!discount)
-        return res.status(400).json({ message: "Mã giảm giá không hợp lệ" });
+        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Mã giảm giá không hợp lệ" });
 
       discountAmount =
         discount.type === "percent"
@@ -128,7 +129,7 @@ const createOrder = async (req, res) => {
           : discount.value;
 
       if (orderData.discountPrice !== discountAmount) {
-        return res.status(400).json({ message: "Số tiền giảm chưa chính xác" });
+        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Số tiền giảm chưa chính xác" });
       }
 
       // Trừ số lần dùng và vô hiệu nếu hết lượt
@@ -145,11 +146,11 @@ const createOrder = async (req, res) => {
     const totalPrice = subTotal - discountAmount + orderData.shippingFee;
 
     if (orderData.totalPrice !== totalPrice) {
-      return res.status(400).json({ message: "Tổng tiền tính chưa chính xác" });
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Tổng tiền tính chưa chính xác" });
     }
 
     if (orderData.subTotal !== subTotal) {
-      return res.status(400).json({ message: "Tạm tính chưa chính xác" });
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Tạm tính chưa chính xác" });
     }
 
     // 7. Lưu đơn hàng
@@ -176,14 +177,14 @@ const createOrder = async (req, res) => {
     // 9. Gửi email
     await sendInforOrderEmail(email, createdOrder);
 
-    return res.status(200).json({
+    return res.status(StatusCodes.OK).json({
       success: true,
       message: 'Đặt hàng thành công!',
       createdOrder,
     });
   } catch (error) {
     return res
-      .status(500)
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: "Lỗi server", error });
   }
 };

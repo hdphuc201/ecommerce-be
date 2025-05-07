@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { OAuth2Client } from "google-auth-library";
+import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
 import { env } from "~/config/environment";
@@ -14,7 +15,7 @@ const registerUser = async (req, res, next) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         error: true,
         message:
           "Email đã tồn tại, hãy đăng nhập Email này bằng Google hoặc vui lòng chọn email khác.",
@@ -22,10 +23,14 @@ const registerUser = async (req, res, next) => {
     }
 
     if (code && code === "") {
-      return res.status(400).json({ message: "Vui lòng nhập mã xác nhận" });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Vui lòng nhập mã xác nhận" });
     }
     if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Mật khẩu không trùng khớp" });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Mật khẩu không trùng khớp" });
     }
 
     // Tạo mã xác thực
@@ -37,7 +42,7 @@ const registerUser = async (req, res, next) => {
     // Gửi email
     await sendVerificationEmail(email, verificationCode);
     res
-      .status(200)
+      .status(StatusCodes.OK)
       .json({ success: true, message: "Mã xác thực đã được gửi đến email" });
   } catch (error) {
     next(error);
@@ -53,10 +58,12 @@ const verifyEmail = async (req, res) => {
     const storedCode = await redisClient.get(`verify:${email}`);
     if (!storedCode)
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ verify: false, message: "Mã xác thực đã hết hạn" });
     if (storedCode !== code)
-      return res.status(400).json({ message: "Mã xác thực không đúng" });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Mã xác thực không đúng" });
 
     // Mã đúng => Tạo tài khoản
     const hash = await bcrypt.hash(password, 10);
@@ -70,10 +77,12 @@ const verifyEmail = async (req, res) => {
     await newUser.save();
     // Xóa mã khỏi Redis
     await redisClient.del(`verify:${email}`);
-    res.status(200).json({ verify: true, message: "Đăng ký thành công" });
+    res
+      .status(StatusCodes.OK)
+      .json({ verify: true, message: "Đăng ký thành công" });
   } catch (error) {
     return res
-      .status(500)
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ message: "Lỗi hệ thống, thử lại sau.", error });
   }
 };
@@ -84,53 +93,45 @@ const loginUser = async (req, res, next) => {
 
     if (isActive === false) {
       return res
-        .status(400)
+        .status(StatusCodes.FORBIDDEN)
         .json({ success: false, message: "Tài khoản đã bị khóa" });
     }
 
     if (!password) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Mật khẩu không được bỏ trống" });
     }
 
     // Gọi service xử lý
     const response = await userService?.loginUser(req.body);
 
-    if (!response.success) return res.status(400).json(response);
+    if (!response.success)
+      return res.status(StatusCodes.BAD_REQUEST).json(response);
+    const { token, ...rest } = response;
 
+    // nếu lưu ở cookie thì response sẽ không lấy token
+    const newResponse = env.COOKIE_MODE ? rest : response;
     // Nếu dùng cookie mode
     if (env.COOKIE_MODE) {
-      const { checkUser } = response;
-
-      const access_token = jwtService?.generateAccessToken(checkUser);
-      const refresh_token = jwtService?.generateRefreshToken(checkUser);
-
       // Gán cookies
-      res.cookie("refresh_token", refresh_token, {
+      res.cookie("refresh_token", token.refresh_token, {
         httpOnly: true,
         secure: true,
         sameSite: "None",
       });
 
-      res.cookie("access_token", access_token, {
+      res.cookie("access_token", token.access_token, {
         httpOnly: true,
         secure: true,
         sameSite: "None",
       });
-
-      // Xóa token trong response nếu dùng cookie
-      delete response.token;
     } else {
       // xóa hoàn toàn token khỏi cookie nếu lưu ở local
       res.clearCookie("refresh_token");
       res.clearCookie("access_token");
     }
-
-    return res.status(200).json({
-      ...response,
-      modeCookie: env.COOKIE_MODE,
-    });
+    return res.status(StatusCodes.OK).json(newResponse);
   } catch (error) {
     next(error);
   }
@@ -142,7 +143,7 @@ const loginGoogle = async (req, res, next) => {
 
   try {
     if (!token) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: "Token không hợp lệ",
       });
@@ -158,7 +159,7 @@ const loginGoogle = async (req, res, next) => {
 
     if (user && user.isActive === false) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Tài khoản đã bị khóa" });
     }
 
@@ -197,7 +198,7 @@ const loginGoogle = async (req, res, next) => {
     user.isLogin = true;
     await user.save();
 
-    return res.status(200).json({
+    return res.status(StatusCodes.OK).json({
       success: true,
       message: "Đăng nhập thành công",
       email: user?.email,
@@ -216,8 +217,7 @@ const loginGoogle = async (req, res, next) => {
         }),
     });
   } catch (error) {
-    console.error("Lỗi loginGoogle:", error);
-    return res.status(500).json({
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error?.message || "Lỗi server",
     });
@@ -237,7 +237,7 @@ const logoutUser = async (req, res, next) => {
     res.clearCookie("refresh_token");
     res.clearCookie("access_token");
     return res
-      .status(200)
+      .status(StatusCodes.OK)
       .json({ success: true, message: "Đăng xuất thành công" }); // Thêm return ở đây
   } catch (error) {
     next(error);
@@ -249,7 +249,7 @@ const refreshToken = async (req, res) => {
   try {
     if (!refreshToken) {
       return res
-        .status(401)
+        .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Không có refresh token" });
     }
 
@@ -257,7 +257,7 @@ const refreshToken = async (req, res) => {
     jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET, (err, user) => {
       if (err) {
         return res
-          .status(403)
+          .status(StatusCodes.FORBIDDEN)
           .json({ success: false, message: "Refresh token không hợp lệ" });
       }
       const newAccessToken = jwt.sign(
@@ -270,7 +270,9 @@ const refreshToken = async (req, res) => {
       return res.json({ success: true, access_token: newAccessToken });
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: error });
   }
 };
 
@@ -280,23 +282,25 @@ const createUser = async (req, res, next) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         error: true,
         message: "Email đã tồn tại. Vui lòng chọn email khác.",
       });
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Mật khẩu không trùng khớp" });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Mật khẩu không trùng khớp" });
     }
 
     const newUser = await userService.createUser(req.body);
     if (!newUser) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ message: "Có lỗi xảy ra khi tạo người dùng" });
     }
-    return res.status(200).json(newUser);
+    return res.status(StatusCodes.OK).json(newUser);
   } catch (error) {
     next(error);
   }
@@ -308,7 +312,10 @@ const updateUser = async (req, res, next) => {
     // nếu req?.body (từ admin) không có thì lấy user id (từ user)
     const { _id, isActive, isAdmin, userId } = req.body;
     const id = _id ? _id : req?.user._id;
-    if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
+    if (!id)
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Bắt buộc phải có ID" });
 
     if (isAdmin === true) {
       const user = await User.findByIdAndUpdate(
@@ -316,7 +323,7 @@ const updateUser = async (req, res, next) => {
         { isActive },
         { new: true }
       );
-      return res.status(200).json({
+      return res.status(StatusCodes.OK).json({
         success: true,
         message: isActive
           ? "Mở khoá tài khoản thành công"
@@ -326,8 +333,9 @@ const updateUser = async (req, res, next) => {
     }
 
     const result = await userService.updateUser(id, req.body);
-    if (!result.success) return res.status(400).json(result);
-    return res.status(200).json(result);
+    if (!result.success)
+      return res.status(StatusCodes.BAD_REQUEST).json(result);
+    return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -336,15 +344,18 @@ const updateUser = async (req, res, next) => {
 const getDetail = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
+    if (!id)
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Bắt buộc phải có ID" });
 
     const user = await User.findById(id, "-password");
     if (!user) {
       return res
-        .status(404)
+        .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "User không tồn tại" });
     }
-    return res.status(200).json(user);
+    return res.status(StatusCodes.OK).json(user);
   } catch (error) {
     next(error);
   }
@@ -353,7 +364,7 @@ const getDetail = async (req, res, next) => {
 const getAllUser = async (req, res, next) => {
   try {
     const users = await User.find({}, "-password"); // không lấy password
-    return res.status(200).json(users); // Đảm bảo phản hồi này chỉ được gọi 1 lần
+    return res.status(StatusCodes.OK).json(users); // Đảm bảo phản hồi này chỉ được gọi 1 lần
   } catch (error) {
     next(error);
   }
@@ -363,19 +374,21 @@ const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.query;
     if (!id) {
-      return res.status(400).json({ message: "Bắt buộc phải có ID" });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Bắt buộc phải có ID" });
     }
 
     const isArray = Array.isArray(id) ? id : [id];
     const result = await User.deleteMany({ _id: { $in: isArray } });
     if (result.deletedCount > 0) {
-      return res.status(200).json({
+      return res.status(StatusCodes.OK).json({
         ...result,
         success: true,
         message: `Đã xóa ${result.deletedCount} user `,
       });
     } else {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         result,
         success: false,
         message: "Không tìm thấy user.",
@@ -392,7 +405,7 @@ const getAddress = async (req, res, next) => {
 
     if (!id) {
       return res
-        .status(401)
+        .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Chưa đăng nhập" });
     }
 
@@ -400,11 +413,11 @@ const getAddress = async (req, res, next) => {
     const listAddress = user.address.map((item) => item);
     if (!listAddress.length) {
       return res
-        .status(401)
+        .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Chưa cập nhật địa chỉ" });
     }
 
-    return res.status(200).json(listAddress);
+    return res.status(StatusCodes.OK).json(listAddress);
   } catch (error) {
     next(error);
   }
@@ -417,7 +430,7 @@ const createAddress = async (req, res, next) => {
 
     if (!id) {
       return res
-        .status(401)
+        .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Chưa đăng nhập" });
     }
 
@@ -438,19 +451,18 @@ const createAddress = async (req, res, next) => {
     );
 
     if (userUpdate) {
-      return res.status(200).json({
+      return res.status(StatusCodes.OK).json({
         success: true,
         message: "Tạo địa chỉ thành công",
         userUpdate,
       });
     } else {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         message: "Không tìm thấy user",
       });
     }
   } catch (error) {
-    console.error("Lỗi createAddress:", error);
     next(error);
   }
 };
@@ -462,14 +474,14 @@ const removeAddress = async (req, res, next) => {
 
     if (!id) {
       return res
-        .status(401)
+        .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Chưa đăng nhập" });
     }
 
     const user = await User.findById(id);
     if (!user) {
       return res
-        .status(404)
+        .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "Người dùng không tồn tại" });
     }
     const listAddress = user.address?.filter(
@@ -479,7 +491,7 @@ const removeAddress = async (req, res, next) => {
     // Nếu không tìm thấy địa chỉ nào cần xóa
     if (user.address.length === listAddress.length) {
       return res
-        .status(404)
+        .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "Không tìm thấy địa chỉ để xóa" });
     }
     // Cập nhật lại danh sách địa chỉ sau khi xóa
@@ -489,7 +501,7 @@ const removeAddress = async (req, res, next) => {
     await user.save();
 
     return res
-      .status(200)
+      .status(StatusCodes.OK)
       .json({ success: true, message: "Xóa thành công", listAddress });
   } catch (error) {
     next(error);
@@ -503,14 +515,14 @@ const updateAddress = async (req, res, next) => {
 
     if (!id) {
       return res
-        .status(401)
+        .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Chưa đăng nhập" });
     }
 
     const user = await User.findById(id);
     if (!user) {
       return res
-        .status(404)
+        .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "Người dùng không tồn tại" });
     }
 
@@ -518,7 +530,9 @@ const updateAddress = async (req, res, next) => {
       (item) => item._id.toString() === addressId
     );
     if (itemAddress === -1) {
-      return res.status(404).json({ message: "Địa chỉ không tồn tại" });
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "Địa chỉ không tồn tại" });
     }
     const updateAddress = {};
     if (houseNumber) updateAddress.houseNumber = houseNumber;
@@ -526,11 +540,18 @@ const updateAddress = async (req, res, next) => {
     if (city) updateAddress.city = city;
     if (defaultAddress) updateAddress.defaultAddress = defaultAddress;
 
+    // Nếu defaultAddress bằng true thì những address còn lại set default là false
+    user.address.forEach((item) => {
+      if (defaultAddress && defaultAddress === true) {
+        return (item.defaultAddress = false);
+      }
+    });
+
     user.address[itemAddress] = updateAddress;
     await user.save();
 
     return res
-      .status(200)
+      .status(StatusCodes.OK)
       .json({ success: true, message: "Cập nhật thành công" });
   } catch (error) {
     next(error);

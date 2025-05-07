@@ -1,20 +1,19 @@
-import { Schema } from "mongoose";
-import mongoose from "mongoose";
+import { model, Schema, Types } from 'mongoose';
 
 const reviewSchema = new Schema(
   {
     productId: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "Product",
       required: true,
     },
     userId: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "User",
       required: true,
     },
     orderId: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "Order",
       required: true,
     },
@@ -22,10 +21,10 @@ const reviewSchema = new Schema(
     userAvatar: { type: String, default: "" },
     rating: { type: Number, min: 1, max: 5, required: true },
     comment: { type: String, trim: true, required: true },
-    images: [{ type: mongoose.Schema.Types.Mixed }],
+    images: [{ type: Schema.Types.Mixed }],
   },
   { timestamps: true }
 );
 
-const Review = mongoose.model("Review", reviewSchema);
+const Review = model("Review", reviewSchema);
 export default Review;

@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { StatusCodes } from "http-status-codes";
 
 import { env } from "~/config/environment";
 import { extractPublicIdFromUrl } from "~/config/extractPublicId";
@@ -16,7 +17,7 @@ const createProduct = async (req, res, next) => {
     const { files } = req;
     if (!files?.length) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Thiếu ảnh sản phẩm" });
     }
 
@@ -34,7 +35,7 @@ const createProduct = async (req, res, next) => {
 
     for (const item in validations) {
       if (!validations[item](req.body[item])) {
-        return res.status(400).json({
+        return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
           message: `${item} thiếu hoặc sai định dạng`,
         });
@@ -45,9 +46,9 @@ const createProduct = async (req, res, next) => {
 
     // ✅ Trả kết quả response ở đây
     if (!result.success) {
-      return res.status(400).json(result);
+      return res.status(StatusCodes.BAD_REQUEST).json(result);
     }
-    return res.status(200).json(result);
+    return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -59,7 +60,7 @@ const updateProduct = async (req, res, next) => {
   const currentImages = req.files;
   if (unchangedImages.length === 0 && currentImages.length === 0) {
     return res
-      .status(500)
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: "Thêm hình ảnh khác" });
   }
   // 1. Xoá ảnh cũ nếu có
@@ -71,7 +72,7 @@ const updateProduct = async (req, res, next) => {
       await removeImagesFromCloudinary(publicIds);
     } catch (error) {
       return res
-        .status(500)
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ success: false, message: "Không thể xóa ảnh", error });
     }
   }
@@ -95,10 +96,10 @@ const updateProduct = async (req, res, next) => {
 
     // ✅ Trả kết quả response ở đây
     if (!updatedProduct.success) {
-      return res.status(400).json(updatedProduct);
+      return res.status(StatusCodes.BAD_REQUEST).json(updatedProduct);
     }
 
-    return res.status(200).json(updatedProduct);
+    return res.status(StatusCodes.OK).json(updatedProduct);
   } catch (error) {
     next(error);
   }
@@ -126,7 +127,7 @@ const updateProductStock = async (req, res, next) => {
     product.sold += quantityOrdered; // Trừ số lượng
 
     await product.save();
-    return res.status(200).json({ message: "Cập nhật số lượng thành công" });
+    return res.status(StatusCodes.OK).json({ message: "Cập nhật số lượng thành công" });
   } catch (error) {
     next(error);
   }
@@ -181,7 +182,7 @@ const getAllProduct = async (req, res, next) => {
       sortObj,
       filterConditions
     );
-    res.status(200).json(result);
+    res.status(StatusCodes.OK).json(result);
     return next();
   } catch (error) {
     next(error);
@@ -191,10 +192,10 @@ const getAllProduct = async (req, res, next) => {
 const getDetailProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
+    if (!id) return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bắt buộc phải có ID" });
 
     const result = await productService.getDetailProduct(id);
-    return res.status(200).json(result);
+    return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -203,11 +204,11 @@ const getDetailProduct = async (req, res, next) => {
 const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.query;
-    if (!id) return res.status(400).json({ message: "Bắt buộc phải có ID" });
+    if (!id) return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bắt buộc phải có ID" });
     const isArray = Array.isArray(id) ? id : [id];
     const result = await productService.deleteProduct(isArray);
-    if (!result.success) return res.status(401).json(result);
-    return res.status(200).json(result);
+    if (!result.success) return res.status(StatusCodes.UNAUTHORIZED).json(result);
+    return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -217,7 +218,7 @@ const searchProduct = async (req, res, next) => {
   try {
     const { q } = req.query;
     if (!q) {
-      return res.status(400).json({ message: "Missing query" });
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Missing query" });
     }
 
     const regex = new RegExp(removeVietnameseTones(q), "i");
@@ -227,14 +228,14 @@ const searchProduct = async (req, res, next) => {
     const result = await Product.find(filterConditions);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ message: "Server Error" });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Server Error" });
   }
 };
 
 const getCate = async (req, res, next) => {
   try {
     const result = await Category.find({});
-    return res.status(200).json(result);
+    return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -243,13 +244,13 @@ const getCate = async (req, res, next) => {
 const createCate = async (req, res, next) => {
   try {
     const category = req.body;
-    if (!category) return res.status(400).json({ message: "Chưa có danh mục" });
+    if (!category) return res.status(StatusCodes.BAD_REQUEST).json({ message: "Chưa có danh mục" });
 
     const result = await productService.createCate(category);
     if (!result.success) {
-      return res.status(400).json(result); // Dừng hàm lại sau khi gửi phản hồi lỗi
+      return res.status(StatusCodes.BAD_REQUEST).json(result); // Dừng hàm lại sau khi gửi phản hồi lỗi
     }
-    return res.status(200).json(result); // Nếu thành công, gửi phản hồi thành công
+    return res.status(StatusCodes.OK).json(result); // Nếu thành công, gửi phản hồi thành công
   } catch (error) {
     next(error);
   }
@@ -258,11 +259,11 @@ const createCate = async (req, res, next) => {
 const deleteCate = async (req, res, next) => {
   try {
     const { id } = req.query;
-    if (!id) return res.status(400).json({ message: "không có ID danh mục" });
+    if (!id) return res.status(StatusCodes.BAD_REQUEST).json({ message: "không có ID danh mục" });
     const isArray = Array.isArray(id) ? id : [id];
     const result = await productService.deleteCate(isArray);
-    if (!result.success) return res.status(401).json(result);
-    return res.status(200).json(result);
+    if (!result.success) return res.status(StatusCodes.UNAUTHORIZED).json(result);
+    return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -272,9 +273,9 @@ const deleteAllCate = async (req, res, next) => {
   try {
     const result = await Category.deleteMany({});
     if (!result.success) {
-      return res.status(400).json(result);
+      return res.status(StatusCodes.BAD_REQUEST).json(result);
     }
-    return res.status(200).json(result);
+    return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     next(error);
   }

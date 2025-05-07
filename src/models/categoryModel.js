@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import { model, Schema } from "mongoose";
 
 // Định nghĩa schema cho người dùng
-const categorySchema = new mongoose.Schema(
+const categorySchema = new Schema(
   {
     id: { type: Number, required: true },
     title: { type: String, required: true },
@@ -12,5 +12,5 @@ const categorySchema = new mongoose.Schema(
   }
 );
 
-const Category = mongoose.model("Category", categorySchema);
+const Category = model("Category", categorySchema);
 export default Category;

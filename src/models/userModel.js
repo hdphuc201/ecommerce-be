@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import { model, Schema } from "mongoose";
 
 // Định nghĩa schema cho người dùng
 
-const addressSchema = new mongoose.Schema({
+const addressSchema = new Schema({
   houseNumber: {
     type: String,
     required: true,
@@ -12,7 +12,7 @@ const addressSchema = new mongoose.Schema({
   defaultAddress: { type: Boolean, default: false }, // Mặc định là false
 });
 
-const userSchema = new mongoose.Schema(
+const userSchema = new Schema(
   {
     name: { type: String, required: true },
     email: {
@@ -34,6 +34,6 @@ const userSchema = new mongoose.Schema(
 );
 
 // Tạo model từ schema
-const User = mongoose.model("User", userSchema);
+const User = model("User", userSchema);
 
 export default User;

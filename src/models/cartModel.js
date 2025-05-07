@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
-const cartSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+const cartSchema = new Schema({
+  userId: { type: Types.ObjectId, ref: "User", required: true },
   listProduct: [
     {
       productId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Types.ObjectId,
         ref: "Product",
         required: true,
       },
@@ -20,5 +20,5 @@ const cartSchema = new mongoose.Schema({
   subTotal: { type: Number, default: 0 }, // Tổng giá trị đơn hàng
 });
 
-const Cart = mongoose.model("Cart", cartSchema);
+const Cart = model("Cart", cartSchema);
 export default Cart;

@@ -7,6 +7,7 @@ import { orderRoute } from "./orderRoute";
 import { productRoute } from "./productRoute";
 import { reviewRoute } from "./reviewRoute";
 import { userRoute } from "./userRoute";
+import { wishlistRoute } from "./wishlistRoute";
 
 const Router = express.Router();
 
@@ -17,5 +18,6 @@ Router.use("/api/cart", cartRoute);
 Router.use("/api/chart", chartRoute);
 Router.use("/api/discount", discountRoute);
 Router.use("/api/reviews", reviewRoute);
+Router.use("/api/wishlist", wishlistRoute);
 
 export { Router };

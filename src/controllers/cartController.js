@@ -1,3 +1,5 @@
+import { StatusCodes } from "http-status-codes";
+
 import Cart from "~/models/cartModel";
 
 // Lấy giỏ hàng của user (CHỈ TRẢ VỀ => DÙNG lean)
@@ -8,15 +10,15 @@ const getCart = async (req, res) => {
       .lean(); // ✅ Thêm lean ở đây vì chỉ đọc
 
     if (!cart) {
-      return res.status(401).json({
+      return res.status(StatusCodes.OK).json({
         message: "Giỏ hàng trống",
         cart: { listProduct: [], totalProduct: 0, subTotal: 0 },
       });
     }
 
-    res.status(200).json(cart);
+    res.status(StatusCodes.OK).json(cart);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Lỗi server", error });
   }
 };
 
@@ -60,9 +62,9 @@ const addCart = async (req, res) => {
 
     await cart.save();
 
-    return res.status(200).json(cart);
+    return res.status(StatusCodes.OK).json(cart);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Lỗi server", error });
   }
 };
 
@@ -74,7 +76,7 @@ const updateCart = async (req, res) => {
     let cart = await Cart.findOne({ userId: req.user._id });
 
     if (!cart)
-      return res.status(400).json({ message: "Giỏ hàng không tồn tại" });
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Giỏ hàng không tồn tại" });
 
     const productIndex = cart.listProduct.findIndex(
       (item) => item.productId.toString() === productId
@@ -82,7 +84,7 @@ const updateCart = async (req, res) => {
 
     if (productIndex === -1)
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ message: "Sản phẩm không có trong giỏ hàng" });
 
     const product = cart.listProduct[productIndex];
@@ -92,9 +94,9 @@ const updateCart = async (req, res) => {
 
     await cart.save();
 
-    return res.status(200).json(cart);
+    return res.status(StatusCodes.OK).json(cart);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Lỗi server", error });
   }
 };
 
@@ -106,7 +108,7 @@ const removeCart = async (req, res) => {
     let cart = await Cart.findOne({ userId: req.user?._id });
 
     if (!cart)
-      return res.status(400).json({ message: "Giỏ hàng không tồn tại" });
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Giỏ hàng không tồn tại" });
 
     const isArray = Array.isArray(id) ? id : [id];
 
@@ -117,7 +119,7 @@ const removeCart = async (req, res) => {
 
       if (productIndex === -1) {
         return res
-          .status(400)
+          .status(StatusCodes.BAD_REQUEST)
           .json({ message: "Sản phẩm không có trong giỏ hàng" });
       }
 
@@ -129,9 +131,9 @@ const removeCart = async (req, res) => {
 
     await cart.save();
 
-    return res.status(200).json(cart);
+    return res.status(StatusCodes.OK).json(cart);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Lỗi server", error });
   }
 };
 

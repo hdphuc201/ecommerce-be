@@ -1,3 +1,5 @@
+import { StatusCodes } from "http-status-codes";
+
 import Discount from "~/models/discountModel";
 import Order from "~/models/orderModel";
 
@@ -69,7 +71,7 @@ const createDiscount = async (req, res, next) => {
     }
     // Nếu có lỗi, trả luôn
     if (errors.length > 0) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: errors.join(" | "),
       });
@@ -89,7 +91,7 @@ const createDiscount = async (req, res, next) => {
       endDate,
     });
 
-    res.status(201).json({
+    res.status(StatusCodes.OK).json({
       success: true,
       message: "Tạo mã giảm giá thành công",
       data: discount,
@@ -108,10 +110,10 @@ const getAllDiscounts = async (req, res, next) => {
     const discounts = await Discount.find(filter).sort({ createdAt: -1 });
     if (!discounts) {
       return res
-        .status(401)
+        .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Không tìm thấy mã" });
     }
-    res.status(200).json({ success: true, data: discounts || [] });
+    res.status(StatusCodes.OK).json({ success: true, data: discounts || [] });
   } catch (error) {
     next(error);
   }
@@ -124,13 +126,13 @@ const validateDiscountCode = async (req, res, next) => {
 
     if (id === undefined) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Đăng nhập để lấy mã giảm giá" });
     }
     const discount = await Discount.findOne({ code });
 
     if (!discount) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         message: "Mã không tồn tại hoặc không hoạt động",
       });
@@ -139,7 +141,7 @@ const validateDiscountCode = async (req, res, next) => {
     const now = new Date();
     if (now < discount.startDate || now > discount.endDate) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Mã chưa áp dụng hoặc đã hết hạn" });
     }
 
@@ -150,12 +152,12 @@ const validateDiscountCode = async (req, res, next) => {
       .map((item) => item.discount);
     if (findCode.includes(discount.code)) {
       return res
-        .status(400)
+        .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Mã đã được sử dụng hết lượt" });
     }
 
     if (subTotal < discount.minOrderValue) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: `Đơn hàng phải từ ${discount.minOrderValue.toLocaleString(
           "de-DE"
@@ -168,7 +170,7 @@ const validateDiscountCode = async (req, res, next) => {
         ? (subTotal * discount.value) / 100
         : discount.value;
 
-    return res.status(200).json({
+    return res.status(StatusCodes.OK).json({
       success: true,
       message: "Áp dụng mã thành công",
       discountAmount,
@@ -187,11 +189,11 @@ const deleteDiscount = async (req, res, next) => {
     const discount = await Discount.deleteMany({ _id: { $in: isArray } });
     if (!discount) {
       return res
-        .status(404)
+        .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "Không tìm thấy mã để xoá" });
     }
     res
-      .status(200)
+      .status(StatusCodes.OK)
       .json({ success: true, message: "Xoá mã giảm giá thành công" });
   } catch (error) {
     next(error);
@@ -215,7 +217,7 @@ const updateDiscount = async (req, res, next) => {
 
   // Kiểm tra tính hợp lệ của _id
   if (!_id) {
-    return res.status(400).json({
+    return res.status(StatusCodes.BAD_REQUEST).json({
       success: false,
       message: "ID mã giảm giá không hợp lệ",
     });
@@ -229,7 +231,7 @@ const updateDiscount = async (req, res, next) => {
     if (code && /^[A-Z0-9]+$/.test(code.trim())) {
       updateData.code = code.trim();
     } else if (code && !/^[A-Z0-9]+$/.test(code.trim())) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: "Mã giảm giá chỉ được phép chứa chữ cái viết hoa và số",
       });
@@ -289,7 +291,7 @@ const updateDiscount = async (req, res, next) => {
       endDate &&
       new Date(startDate).getTime() >= new Date(endDate).getTime()
     ) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: "Ngày bắt đầu phải nhỏ hơn ngày kết thúc",
       });
@@ -301,19 +303,19 @@ const updateDiscount = async (req, res, next) => {
     });
 
     if (!updateDiscount) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: "Không có gì thay đổi hoặc mã giảm giá không tồn tại",
       });
     }
 
-    return res.status(200).json({
+    return res.status(StatusCodes.OK).json({
       success: true,
       message: "Cập nhật mã giảm giá thành công",
       data: updateDiscount, // Trả về dữ liệu đã cập nhật để người dùng có thể thấy sự thay đổi
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || "Lỗi khi cập nhật mã giảm giá",
     });

@@ -1,4 +1,5 @@
 import { body, validationResult } from "express-validator";
+import { StatusCodes } from "http-status-codes";
 
 export const validateRegisterUser = [
   body("name").notEmpty().withMessage("Name is required"),
@@ -16,7 +17,7 @@ export const validateRegisterUser = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(StatusCodes.BAD_REQUEST).json({ errors: errors.array() });
     }
     next();
   },

@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+import { model, Schema } from "mongoose";
 
 import removeVietnameseTones from "~/utils/removeVietnameseTones";
 
-const productSchema = new mongoose.Schema(
+const productSchema = new Schema(
   {
     name: { type: String, required: true, unique: true },
-    image: [{ type: mongoose.Schema.Types.Mixed, required: true }], // Chấp nhận bất kỳ object nào
+    image: [{ type: Schema.Types.Mixed, required: true }], // Chấp nhận bất kỳ object nào
     categories: { type: Number, required: true },
     slugName: { type: String, required: false, index: true },
     price: { type: Number, required: true },
@@ -41,5 +41,5 @@ productSchema.pre("save", async function (next) {
   next();
 });
 
-const Product = mongoose.model("Product", productSchema);
+const Product = model("Product", productSchema);
 export default Product;

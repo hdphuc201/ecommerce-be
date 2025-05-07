@@ -1,3 +1,4 @@
+import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
 import { env } from "~/config/environment";
@@ -11,27 +12,26 @@ export const authMiddleware = async (req, res, next) => {
     const token = env.COOKIE_MODE
       ? req.cookies?.access_token
       : req.headers.authorization?.split(" ")[1];
-
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Unauthorized" });
     }
 
     jwt.verify(token, env.ACCESS_TOKEN_SECRET, async (err, user) => {
       if (err && !env.COOKIE_MODE) {
-        return res.status(403).json({ message: "Token is not valid" });
+        return res.status(StatusCodes.FORBIDDEN).json({ message: "Token is not valid" });
       }
 
       if (err && env.COOKIE_MODE) {
         const refreshToken = req.cookies?.refresh_token;
         if (!refreshToken) {
           return res
-            .status(401)
+            .status(StatusCodes.UNAUTHORIZED)
             .json({ message: "Unauthorized - No refresh tokens found" });
         }
 
         jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET, (err, user) => {
           if (err) {
-            return res.status(403).json({
+            return res.status(StatusCodes.FORBIDDEN).json({
               message: "Refresh token is not valid",
               expired: true,
             });
@@ -58,7 +58,7 @@ export const authMiddleware = async (req, res, next) => {
           `TOKEN_BLACKLIST_${user?._id}_${user.jit}`
         );
         if (isBlacklisted) {
-          return res.status(401).json({ message: "Token revoked" });
+          return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token revoked" });
         }
       }
       req.user = user;
@@ -74,7 +74,7 @@ export const isAdmin = async (req, res, next) => {
     const { user } = req;
     if (!user?.isAdmin) {
       return res
-        .status(403)
+        .status(StatusCodes.FORBIDDEN)
         .json({ message: "You are not allowed to delete other" }); // Thêm return
     }
     next();
