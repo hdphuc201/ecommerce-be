@@ -7,6 +7,7 @@ import { WHITELIST_DOMAINS } from "~/utils/constants";
 // Cấu hình CORS Option trong dự án thực tế
 export const corsOptions = {
   origin: function (origin, callback) {
+    console.log("origin", origin)
     if (env.BUILD_MODE === "dev") {
       return callback(null, true);
     }

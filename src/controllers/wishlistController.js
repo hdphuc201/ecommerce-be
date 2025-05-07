@@ -5,7 +5,7 @@ import Wishlist from "~/models/wishlistModel";
 const getWishlist = async (req, res) => {
   try {
     const wishlist = await Wishlist.findOne({ userId: req.user._id }).populate("products");
-
+    console.log('wishlist', wishlist)
     if (!wishlist) {
       return res
         .status(StatusCodes.NOT_FOUND)
@@ -31,6 +31,7 @@ const addWishlist = async (req, res) => {
 
     let wishlist = await Wishlist.findOne({ userId: req.user._id });
 
+    console.log('wishlist', wishlist)
     if (wishlist) {
       const isExists = wishlist.products.some(
         (id) => id.toString() === productId
