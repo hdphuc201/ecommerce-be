@@ -1,8 +1,3 @@
-// Polyfill SlowBuffer nếu undefined (fix lỗi Node.js >=20+ với buffer-equal-constant-time)
-if (global.SlowBuffer === undefined) {
-  global.SlowBuffer = Buffer;
-}
-
 import "dotenv/config";
 
 import exitHook from "async-exit-hook";
