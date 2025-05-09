@@ -49,11 +49,5 @@ Router.delete(
   isAdmin,
   productController.deleteCate
 );
-Router.delete(
-  "/delete-all-cateogry",
-  authMiddleware,
-  isAdmin,
-  productController.deleteAllCate
-);
 
 export const productRoute = Router;

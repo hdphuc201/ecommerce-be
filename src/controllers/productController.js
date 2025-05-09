@@ -269,18 +269,6 @@ const deleteCate = async (req, res, next) => {
   }
 };
 
-const deleteAllCate = async (req, res, next) => {
-  try {
-    const result = await Category.deleteMany({});
-    if (!result.success) {
-      return res.status(StatusCodes.BAD_REQUEST).json(result);
-    }
-    return res.status(StatusCodes.OK).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const productController = {
   createProduct,
   updateProduct,
@@ -293,5 +281,4 @@ export const productController = {
   getCate,
   createCate,
   deleteCate,
-  deleteAllCate,
 };

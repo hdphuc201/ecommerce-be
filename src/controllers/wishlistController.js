@@ -5,7 +5,6 @@ import Wishlist from "~/models/wishlistModel";
 const getWishlist = async (req, res) => {
   try {
     const wishlist = await Wishlist.findOne({ userId: req.user._id }).populate("products");
-    console.log('wishlist', wishlist)
     if (!wishlist) {
       return res
         .status(StatusCodes.NOT_FOUND)
