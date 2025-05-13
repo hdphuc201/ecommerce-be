@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 
 import { env } from "~/config/environment";
 import { sendVerificationEmail } from "~/config/sendEmail";
+import Order from "~/models/orderModel";
 import User from "~/models/userModel";
 import { jwtService } from "~/services/jwtService";
 import { userService } from "~/services/userService";
@@ -362,9 +363,52 @@ const getDetail = async (req, res, next) => {
 };
 
 const getAllUser = async (req, res, next) => {
+  const { orderCount, isLogin, isActive } = req.query;
+
   try {
-    const users = await User.find({}, "-password"); // không lấy password
-    return res.status(StatusCodes.OK).json(users); // Đảm bảo phản hồi này chỉ được gọi 1 lần
+    const filterObj = { isAdmin: false };
+    if (isLogin && isLogin !== "all") filterObj.isLogin = isLogin;
+    if (isActive && isActive !== "all") filterObj.isActive = isActive;
+
+    // Lấy toàn bộ order và tính số đơn hàng theo user
+    const listOrder = await Order.find({}, "userId");
+    const countMap = listOrder.reduce((acc, order) => {
+      const uid = String(order.userId);
+      acc[uid] = (acc[uid] || 0) + 1;
+      return acc;
+    }, {});
+
+    const entries = Object.entries(countMap); // [ [userId, count], ... ]
+    if (entries.length === 0) {
+      return res.status(StatusCodes.OK).json([]); // Không có đơn hàng nào
+    }
+
+    // Tìm số đơn hàng nhiều nhất và ít nhất
+    const counts = entries.map(([_, count]) => count);
+    const maxCount = Math.max(...counts);
+    const minCount = Math.min(...counts);
+
+    // Lọc userId tương ứng
+    let targetUserIds = [];
+
+    if (orderCount === "max") {
+      targetUserIds = entries
+        .filter(([_, count]) => count === maxCount)
+        .map(([userId]) => userId);
+    } else if (orderCount === "min") {
+      targetUserIds = entries
+        .filter(([_, count]) => count === minCount)
+        .map(([userId]) => userId);
+    } else if (orderCount === "all") {
+      targetUserIds = Object.keys(countMap);
+    }
+
+    if (targetUserIds.length > 0) {
+      filterObj._id = { $in: targetUserIds };
+    }
+
+    const users = await User.find(filterObj, "-password");
+    return res.status(StatusCodes.OK).json(users);
   } catch (error) {
     next(error);
   }

@@ -11,4 +11,11 @@ Router.get(
   chartController.getRevenueStatistics
 );
 
+Router.post(
+  "/stats/products",
+  authMiddleware,
+  isAdmin,
+  chartController.getProductsInPeriod
+);
+
 export const chartRoute = Router;

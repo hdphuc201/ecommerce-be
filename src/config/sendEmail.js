@@ -67,7 +67,7 @@ export const sendInforOrderEmail = async (email, ordered) => {
       </p>
       <ul style="list-style-type: none; padding-left: 0;">
         ${ordered?.orderItems?.map(
-    (item, index) =>
+    (item) =>
       `<li
               key=${item?._id}
               style="display: flex; align-items: center; margin-bottom: 10px;"

@@ -1,16 +1,20 @@
-import { model, Schema } from "mongoose";
+// models/category.model.ts
+import { model, Schema, Types } from 'mongoose';
 
-// Định nghĩa schema cho người dùng
 const categorySchema = new Schema(
   {
-    id: { type: Number, required: true },
     title: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     description: { type: String },
+    parent: {
+      type: Types.ObjectId,
+      ref: 'Category',
+      default: null, // null tức là danh mục cha
+    },
+    productCount: { type: Number, default: 0 },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-const Category = model("Category", categorySchema);
+const Category = model('Category', categorySchema);
 export default Category;

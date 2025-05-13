@@ -23,8 +23,15 @@ const createProduct = async (req, res, next) => {
 
     const imagePaths = await handleMultipleImageUploadBuffer(files, "products");
 
+    let code;
+    do {
+      code = Math.floor(1000 + Math.random() * 9000);
+    } while (await Product.exists({ code }));
+    req.body.code = code;
+
     const validations = {
       name: (valid) => valid,
+      code: (valid) => valid,
       categories: (valid) => valid,
       price: (valid) => Number(valid),
       price_old: (valid) => Number(valid),
@@ -127,7 +134,9 @@ const updateProductStock = async (req, res, next) => {
     product.sold += quantityOrdered; // Trừ số lượng
 
     await product.save();
-    return res.status(StatusCodes.OK).json({ message: "Cập nhật số lượng thành công" });
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: "Cập nhật số lượng thành công" });
   } catch (error) {
     next(error);
   }
@@ -135,7 +144,8 @@ const updateProductStock = async (req, res, next) => {
 
 const getAllProduct = async (req, res, next) => {
   try {
-    const { limit, page, sort, type, price, rating, q, categories } = req.query;
+    const { limit, page, sort, type, price, rating, q, categories, code } =
+      req.query;
 
     const sortObj = {};
     if (sort) {
@@ -160,22 +170,26 @@ const getAllProduct = async (req, res, next) => {
         console.warn(`Invalid rating value: ${rating}`);
       }
     }
+    if (code) filterConditions.code = Number(code);
     if (price && !isNaN(price))
       filterConditions.price = { $lte: Number(price) };
     if (q) filterConditions.name = { $regex: new RegExp(q, "i") }; // i' là flag cho tìm kiếm không phân biệt hoa thường
     if (categories) {
-      const categoriesValue = Number(categories) || 0;
-      if (!isNaN(categoriesValue) && categoriesValue > 0) {
-        filterConditions.categories = categoriesValue;
+      const category = await Category.findOne({ _id: categories });
+
+      if (!category) return; // Optional: xử lý nếu không tìm thấy
+
+      if (category.parent) {
+        // Nếu là danh mục con → lọc đúng danh mục con
+        filterConditions.categories = category._id;
       } else {
-        console.warn(`Invalid categories value: ${categories}`);
-      }
-      if (!isNaN(categoriesValue)) {
-        filterConditions.categories = { $eq: Number(categories) };
-      } else {
-        console.warn(`Invalid categories value: ${categories}`);
+        // Nếu là danh mục cha → lọc chính nó và tất cả danh mục con
+        const children = await Category.find({ parent: category._id });
+        const childIds = children.map((child) => child._id);
+        filterConditions.categories = { $in: [category._id, ...childIds] };
       }
     }
+
     const result = await productService.getAllProduct(
       Number(limit) || 8,
       Number(page) || 1,
@@ -192,7 +206,10 @@ const getAllProduct = async (req, res, next) => {
 const getDetailProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (!id) return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bắt buộc phải có ID" });
+    if (!id)
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Bắt buộc phải có ID" });
 
     const result = await productService.getDetailProduct(id);
     return res.status(StatusCodes.OK).json(result);
@@ -204,10 +221,14 @@ const getDetailProduct = async (req, res, next) => {
 const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.query;
-    if (!id) return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bắt buộc phải có ID" });
+    if (!id)
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Bắt buộc phải có ID" });
     const isArray = Array.isArray(id) ? id : [id];
     const result = await productService.deleteProduct(isArray);
-    if (!result.success) return res.status(StatusCodes.UNAUTHORIZED).json(result);
+    if (!result.success)
+      return res.status(StatusCodes.UNAUTHORIZED).json(result);
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     next(error);
@@ -218,7 +239,9 @@ const searchProduct = async (req, res, next) => {
   try {
     const { q } = req.query;
     if (!q) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Missing query" });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Missing query" });
     }
 
     const regex = new RegExp(removeVietnameseTones(q), "i");
@@ -228,44 +251,9 @@ const searchProduct = async (req, res, next) => {
     const result = await Product.find(filterConditions);
     res.json(result);
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Server Error" });
-  }
-};
-
-const getCate = async (req, res, next) => {
-  try {
-    const result = await Category.find({});
-    return res.status(StatusCodes.OK).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const createCate = async (req, res, next) => {
-  try {
-    const category = req.body;
-    if (!category) return res.status(StatusCodes.BAD_REQUEST).json({ message: "Chưa có danh mục" });
-
-    const result = await productService.createCate(category);
-    if (!result.success) {
-      return res.status(StatusCodes.BAD_REQUEST).json(result); // Dừng hàm lại sau khi gửi phản hồi lỗi
-    }
-    return res.status(StatusCodes.OK).json(result); // Nếu thành công, gửi phản hồi thành công
-  } catch (error) {
-    next(error);
-  }
-};
-
-const deleteCate = async (req, res, next) => {
-  try {
-    const { id } = req.query;
-    if (!id) return res.status(StatusCodes.BAD_REQUEST).json({ message: "không có ID danh mục" });
-    const isArray = Array.isArray(id) ? id : [id];
-    const result = await productService.deleteCate(isArray);
-    if (!result.success) return res.status(StatusCodes.UNAUTHORIZED).json(result);
-    return res.status(StatusCodes.OK).json(result);
-  } catch (error) {
-    next(error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Server Error" });
   }
 };
 
@@ -277,8 +265,4 @@ export const productController = {
   searchProduct,
   getDetailProduct,
   getAllProduct,
-  // cate
-  getCate,
-  createCate,
-  deleteCate,
 };

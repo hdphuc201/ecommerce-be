@@ -1,13 +1,21 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 import removeVietnameseTones from "~/utils/removeVietnameseTones";
 
 const productSchema = new Schema(
   {
     name: { type: String, required: true, unique: true },
-    image: [{ type: Schema.Types.Mixed, required: true }], // Chấp nhận bất kỳ object nào
-    categories: { type: Number, required: true },
-    slugName: { type: String, required: false, index: true },
+    image: [{ type: Schema.Types.Mixed, required: true }],
+    code: { type: Number, required: true },
+
+    // Gắn với 1 category (cha hoặc con)
+    categories: {
+      type: Types.ObjectId,
+      ref: 'Category',
+      required: true,
+    },
+
+    slugName: { type: String, index: true },
     price: { type: Number, required: true },
     price_old: { type: Number, required: true },
     countInstock: { type: Number, required: true },
@@ -15,22 +23,21 @@ const productSchema = new Schema(
     description: { type: String, required: true },
     sold: { type: Number, default: 0 },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
+
+// Tạo slug trước khi lưu
 productSchema.pre("save", async function (next) {
   if (this.isModified("name") || this.isNew) {
     let baseSlug = removeVietnameseTones(this.name)
       .trim()
-      .replace(/\s+/g, "-") // Thay khoảng trắng bằng dấu '-'
-      .replace(/[^a-zA-Z0-9-]/g, "") // Xóa ký tự đặc biệt
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9-]/g, "")
       .toLowerCase();
 
     let slug = baseSlug;
     let count = 1;
 
-    // Đảm bảo slug không bị trùng lặp
     while (await this.constructor.exists({ slugName: slug })) {
       slug = `${baseSlug}-${count}`;
       count++;
@@ -38,6 +45,7 @@ productSchema.pre("save", async function (next) {
 
     this.slugName = slug;
   }
+
   next();
 });
 

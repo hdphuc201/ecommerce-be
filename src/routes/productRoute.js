@@ -35,19 +35,5 @@ Router.get("/get-detail/:id", productController.getDetailProduct);
 Router.get("/getAllProduct", productController.getAllProduct);
 Router.post("/search", productController.searchProduct);
 
-// cate
-Router.get("/getCategory", productController.getCate);
-Router.post(
-  "/create-category",
-  authMiddleware,
-  isAdmin,
-  productController.createCate
-);
-Router.delete(
-  "/delete-cateogry",
-  authMiddleware,
-  isAdmin,
-  productController.deleteCate
-);
 
 export const productRoute = Router;

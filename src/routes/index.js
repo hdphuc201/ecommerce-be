@@ -1,6 +1,7 @@
 import express from "express";
 
 import { cartRoute } from "./cartRoute";
+import { categoryRoute } from "./categoryRoute";
 import { chartRoute } from "./chartRoute";
 import { discountRoute } from "./discountRoute";
 import { orderRoute } from "./orderRoute";
@@ -19,5 +20,6 @@ Router.use("/api/chart", chartRoute);
 Router.use("/api/discount", discountRoute);
 Router.use("/api/reviews", reviewRoute);
 Router.use("/api/wishlist", wishlistRoute);
+Router.use("/api/category", categoryRoute);
 
 export { Router };
