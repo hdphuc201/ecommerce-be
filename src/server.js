@@ -14,6 +14,12 @@ import { Router } from "./routes";
 
 const app = express();
 
+// fix cái lỗi cache from dish của expressjs
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 app.use(cors(corsOptions));
 app.use("/uploads", express.static(path.resolve("uploads")));
 app.use(express.json({ limit: "5mb" }));
