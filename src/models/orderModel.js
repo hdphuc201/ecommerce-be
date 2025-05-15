@@ -21,7 +21,7 @@ const orderSchema = new Schema(
       ref: "User",
       required: true,
     }, // Tham chiếu đến User
-
+    code: { type: Number, required: true },
     orderItems: [orderItemSchema], // Mảng các sản phẩm trong đơn hàng
     totalProduct: { type: Number, default: 0 }, // Tổng số lượng sản phẩm
     subTotal: { type: Number, default: 0 }, // Tổng tiền sản phẩm
@@ -39,6 +39,7 @@ const orderSchema = new Schema(
     trackingNumber: { type: String, default: "" }, // Số theo dõi giao hàng,
     isPaid: { type: Boolean, default: false },
     totalPrice: { type: Number, required: true }, // ✅ Thêm dòng này đúng chuẩn
+    status: { type: String, default: "fullfilled" },
   },
   { timestamps: true } // Thêm các trường createdAt và updatedAt
 );

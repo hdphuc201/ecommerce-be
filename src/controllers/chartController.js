@@ -102,6 +102,7 @@ const getProductsInPeriod = async (req, res) => {
     const orders = await Order.find({
       createdAt: { $gte: createdAt, $lte: endDate },
       isPaid: true,
+      status: 'fullfilled',
     }).select("orderItems");
 
     const mergedItems = {};

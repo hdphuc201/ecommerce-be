@@ -31,7 +31,7 @@ const getOrder = async (req, res, next) => {
 
 const getOrderAdmin = async (req, res, next) => {
   try {
-    const { id, page, limit } = req.query;
+    const { id, page, limit, status, code } = req.query;
     const offset = (page - 1) * limit;
     // Xác thực page và limit để đảm bảo chúng là các số nguyên dương
     if (page <= 0 || limit <= 0) {
@@ -41,8 +41,23 @@ const getOrderAdmin = async (req, res, next) => {
       };
     }
 
+    const filterObj = {};
+
+    if (status) filterObj.status = status;
+    if (code) filterObj.code = code;
+
+    if (!id) {
+      const totalOrders = await Order.countDocuments();
+      const orders = await Order.find(filterObj || {});
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        data: orders,
+        total: totalOrders,
+      });
+    }
+
     const totalOrders = await Order.countDocuments({ userId: id });
-    const orders = await Order.find({ userId: id })
+    const orders = await Order.find({ userId: id, ...filterObj })
       .limit(limit || 4)
       .skip(offset);
 
@@ -121,7 +136,9 @@ const createOrder = async (req, res) => {
       const discount = await Discount.findOne({ code: orderData.discount });
 
       if (!discount)
-        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Mã giảm giá không hợp lệ" });
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Mã giảm giá không hợp lệ" });
 
       discountAmount =
         discount.type === "percent"
@@ -129,7 +146,9 @@ const createOrder = async (req, res) => {
           : discount.value;
 
       if (orderData.discountPrice !== discountAmount) {
-        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Số tiền giảm chưa chính xác" });
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Số tiền giảm chưa chính xác" });
       }
 
       // Trừ số lần dùng và vô hiệu nếu hết lượt
@@ -146,12 +165,22 @@ const createOrder = async (req, res) => {
     const totalPrice = subTotal - discountAmount + orderData.shippingFee;
 
     if (orderData.totalPrice !== totalPrice) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Tổng tiền tính chưa chính xác" });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Tổng tiền tính chưa chính xác" });
     }
 
     if (orderData.subTotal !== subTotal) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Tạm tính chưa chính xác" });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Tạm tính chưa chính xác" });
     }
+
+    let code;
+    do {
+      code = Math.floor(1000 + Math.random() * 90000);
+    } while (await Order.exists({ code }));
+    orderData.code = code;
 
     // 7. Lưu đơn hàng
     const order = new Order(orderData);
@@ -179,8 +208,31 @@ const createOrder = async (req, res) => {
 
     return res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Đặt hàng thành công!',
+      message: "Đặt hàng thành công!",
       createdOrder,
+    });
+  } catch (error) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Lỗi server", error });
+  }
+};
+
+const cancelOrder = async (req, res) => {
+  try {
+    const { ids } = req.query;
+    const orderIds = ids.split(",");
+    const orders = await Order.find({ _id: { $in: orderIds } });
+    if (orders.length !== orderIds.length) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Một số đơn hàng không tồn tại",
+      });
+    }
+    await Order.updateMany({ _id: { $in: orderIds } }, { status: "cancelled" });
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Đơn hàng đã được hủy",
     });
   } catch (error) {
     return res
@@ -193,4 +245,5 @@ export const orderController = {
   getOrder,
   getOrderAdmin,
   createOrder,
+  cancelOrder,
 };

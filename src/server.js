@@ -11,6 +11,7 @@ import { env } from "./config/environment";
 import { ClOSE_DB, CONNECT_DB } from "./config/mongodb";
 import { CLOSE_REDIS, CONNECT_REDIS, GET_REDIS_CLIENT } from "./config/redis";
 import { Router } from "./routes";
+import Order from "./models/orderModel";
 
 const app = express();
 
@@ -40,7 +41,7 @@ const START_SERVER = () => {
   const host =
     env.BUILD_MODE === "production" ? undefined : env.LOCAL_DEV_APP_HOST;
 
-  app.listen(port, host, () => {
+  app.listen(port, host, async () => {
     console.log(
       `3. ${
         env.BUILD_MODE === "production" ? "Production" : "Dev"
