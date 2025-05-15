@@ -142,6 +142,17 @@ const updateProductStock = async (req, res, next) => {
   }
 };
 
+const getAllCategoryIds = async (categoryId) => {
+  const children = await Category.find({ parent: categoryId });
+  const childIds = await Promise.all(
+    children.map(async (child) => await getAllCategoryIds(child._id))
+  );
+  // console.log('childIds', childIds)
+
+  // Làm phẳng mảng con cháu chắt các đời
+  return [categoryId, ...childIds.flat()];
+};
+
 const getAllProduct = async (req, res, next) => {
   try {
     const { limit, page, sort, type, price, rating, q, categories, code } =
@@ -179,15 +190,9 @@ const getAllProduct = async (req, res, next) => {
 
       if (!category) return; // Optional: xử lý nếu không tìm thấy
 
-      if (category.parent) {
-        // Nếu là danh mục con → lọc đúng danh mục con
-        filterConditions.categories = category._id;
-      } else {
-        // Nếu là danh mục cha → lọc chính nó và tất cả danh mục con
-        const children = await Category.find({ parent: category._id });
-        const childIds = children.map((child) => child._id);
-        filterConditions.categories = { $in: [category._id, ...childIds] };
-      }
+      // Nếu là danh mục cha → lọc chính nó và tất cả danh mục con
+      const allCategoryIds = await getAllCategoryIds(category._id);
+      filterConditions.categories = { $in: allCategoryIds };
     }
 
     const result = await productService.getAllProduct(

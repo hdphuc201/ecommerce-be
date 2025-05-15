@@ -5,70 +5,73 @@ import Product from "~/models/productModel";
 /**
  * Đếm số lượng sản phẩm theo category và cập nhật vào DB
  */
+
+const getAllChildCategoryIds = (categories, parentId) => {
+  const childIds = [];
+
+  const findChildren = (id) => {
+    const children = categories.filter(cat => cat.parent?.toString() === id.toString());
+    for (const child of children) {
+      childIds.push(child._id);
+      findChildren(child._id);
+    }
+  };
+
+  findChildren(parentId);
+  return childIds;
+};
+
 const updateProductCountForCategories = async (productCategoryIds) => {
   const categories = await Category.find({});
+  const categoryIdStrings = productCategoryIds.flat().map((id) => id.toString()); // flat để phòng trường hợp mảng lồng
 
-  const categoryIdStrings = productCategoryIds.map((id) => id.toString());
-  const parentToUpdate = new Set(); // Dùng để lưu ID cha không bị trùng
+  const updatedCategoryIds = new Set();
 
-  // === Xử lý từng category được truyền vào ===
   for (const categoryId of categoryIdStrings) {
     const currentCategory = categories.find(
-      (cat) => cat._id.toString() || cat._id === categoryId
+      (cat) => cat._id.toString() === categoryId
     );
-
     if (!currentCategory) continue;
 
-    // === Nếu là category cha ===
-    if (!currentCategory.parent) {
-      const childOfParent = categories.filter(
-        (cat) => cat.parent?.toString() === currentCategory._id.toString()
+    // 1. Lấy tất cả danh mục con của danh mục hiện tại (nếu có)
+    const allChildren = getAllChildCategoryIds(categories, currentCategory._id);
+
+    const allRelevantIds = [currentCategory._id, ...allChildren];
+
+    // 2. Đếm tổng sản phẩm thuộc danh mục này + danh mục con
+    const totalCount = await Product.countDocuments({
+      categories: { $in: allRelevantIds },
+    });
+
+    await Category.findByIdAndUpdate(currentCategory._id, {
+      productCount: totalCount,
+    });
+
+    updatedCategoryIds.add(currentCategory._id.toString());
+
+    // 3. Cập nhật lên cha nếu có
+    let parentId = currentCategory.parent;
+    while (parentId) {
+      const parentCategory = categories.find(
+        (cat) => cat._id.toString() === parentId.toString()
       );
-      const childIds = childOfParent.map((c) => c._id);
+      if (!parentCategory) break;
 
-      const count = await Product.countDocuments({
-        categories: { $in: [currentCategory._id, ...childIds] },
+      const childOfParent = getAllChildCategoryIds(categories, parentCategory._id);
+      const relevantIds = [parentCategory._id, ...childOfParent];
+
+      const parentCount = await Product.countDocuments({
+        categories: { $in: relevantIds },
       });
 
-      await Category.findByIdAndUpdate(currentCategory._id, {
-        productCount: count,
+      await Category.findByIdAndUpdate(parentCategory._id, {
+        productCount: parentCount,
       });
+
+      updatedCategoryIds.add(parentCategory._id.toString());
+
+      parentId = parentCategory.parent;
     }
-
-    // === Nếu là category con ===
-    if (currentCategory.parent) {
-      const childCount = await Product.countDocuments({
-        categories: currentCategory._id,
-      });
-
-      await Category.findByIdAndUpdate(currentCategory._id, {
-        productCount: childCount,
-      });
-
-      // Ghi nhận cha để xử lý sau (tránh bị update nhiều lần nếu có nhiều con)
-      parentToUpdate.add(currentCategory.parent.toString());
-    }
-  }
-
-  // === Cập nhật tất cả category cha của các category con đã xử lý ===
-  for (const parentId of parentToUpdate) {
-    const parentCategory = categories.find(
-      (cat) => cat._id.toString() === parentId
-    );
-    if (!parentCategory) continue;
-
-    const siblings = categories.filter(
-      (cat) => cat.parent?.toString() === parentId
-    );
-    const siblingIds = siblings.map((c) => c._id);
-
-    const parentCount = await Product.countDocuments({
-      categories: { $in: [parentCategory._id, ...siblingIds] },
-    });
-
-    await Category.findByIdAndUpdate(parentId, {
-      productCount: parentCount,
-    });
   }
 
   return {
@@ -140,6 +143,7 @@ const updateProduct = async (form) => {
       };
     }
 
+    await updateProductCountForCategories([updated.categories]);
     return {
       success: true,
       message: "Cập nhật sản phẩm thành công",
