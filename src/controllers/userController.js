@@ -4,11 +4,53 @@ import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
 import { env } from "~/config/environment";
-import { sendVerificationEmail } from "~/config/sendEmail";
+import {
+  sendOTPCodeEmailChangePassword,
+  sendVerificationEmail,
+} from "~/config/sendEmail";
 import Order from "~/models/orderModel";
 import User from "~/models/userModel";
 import { jwtService } from "~/services/jwtService";
 import { userService } from "~/services/userService";
+
+const changePassword = async (req, res) => {
+  const { email, code } = req.body;
+  const existUser = await User.findOne({ email });
+  if (!existUser) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: "Email không tồn tại" });
+  }
+
+  if (!code) {
+    // Tạo mã xác thực
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+    const redisClient = req.redisClient;
+    await redisClient.setEx(`verify:${email}`, 600, verificationCode);
+    // Gửi email
+    await sendOTPCodeEmailChangePassword(email, verificationCode);
+    return res
+      .status(StatusCodes.OK)
+      .json({ success: true, message: "Mã xác thực đã được gửi đến email" });
+  } else {
+    const redisClient = req.redisClient;
+    const storedCode = await redisClient.get(`verify:${email}`);
+    if (!storedCode)
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ verify: false, message: "Mã xác thực đã hết hạn" });
+    if (storedCode !== code)
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Mã xác thực không đúng" });
+    await redisClient.del(`verify:${email}`);
+    return res
+      .status(StatusCodes.OK)
+      .json({ success: true, message: "Xác thực thành công" });
+  }
+};
 
 const registerUser = async (req, res, next) => {
   try {
@@ -211,11 +253,11 @@ const loginGoogle = async (req, res, next) => {
       ...(env.COOKIE_MODE
         ? {}
         : {
-          token: {
-            access_token,
-            refresh_token,
-          },
-        }),
+            token: {
+              access_token,
+              refresh_token,
+            },
+          }),
     });
   } catch (error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -302,6 +344,20 @@ const createUser = async (req, res, next) => {
         .json({ message: "Có lỗi xảy ra khi tạo người dùng" });
     }
     return res.status(StatusCodes.OK).json(newUser);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateUserPassword = async (req, res, next) => {
+  try {
+    const { password, email } = req.body;
+    const hash = await bcrypt.hash(password, 10);
+    const exsitUser = await User.findOne({ email });
+    await User.findByIdAndUpdate(exsitUser._id, { password: hash });
+    return res
+      .status(StatusCodes.OK)
+      .json({ success: true, message: "Mật khẩu đã được đổi" });
   } catch (error) {
     next(error);
   }
@@ -603,6 +659,8 @@ const updateAddress = async (req, res, next) => {
 };
 
 export const userController = {
+  changePassword,
+  updateUserPassword,
   registerUser,
   verifyEmail,
   loginUser,

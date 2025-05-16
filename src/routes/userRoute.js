@@ -35,4 +35,7 @@ Router.post("/createAddress", authMiddleware, userController.createAddress);
 Router.delete("/removeAddress", authMiddleware, userController.removeAddress);
 Router.put("/updateAddress", authMiddleware, userController.updateAddress);
 
+Router.put("/change-password", userController.changePassword);
+Router.put("/update-password", userController.updateUserPassword);
+
 export const userRoute = Router;
