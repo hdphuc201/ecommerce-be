@@ -104,7 +104,9 @@ const removeImagesFromCloudinary = async (publicIds) => {
  */
 const getReviews = async (req, res, next) => {
   try {
-    const reviews = await Review.find().sort("-createdAt");
+    const reviews = await Review.find()
+      .sort("-createdAt")
+      .populate("userId", "name avatar");
 
     // Group theo productId và trả về mảng
     const groupedMap = reviews.reduce((acc, cur) => {
@@ -138,10 +140,14 @@ const updateReview = async (req, res, next) => {
 
     const review = await Review.findById(reviewId);
     if (!review) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: "Không tìm thấy review" });
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "Không tìm thấy review" });
     }
     if (review.user.toString() !== userId.toString()) {
-      return res.status(StatusCodes.FORBIDDEN).json({ message: "Không có quyền sửa" });
+      return res
+        .status(StatusCodes.FORBIDDEN)
+        .json({ message: "Không có quyền sửa" });
     }
 
     review.rating = rating ?? review.rating;

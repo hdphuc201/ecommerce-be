@@ -17,8 +17,6 @@ const reviewSchema = new Schema(
       ref: "Order",
       required: true,
     },
-    userName: { type: String },
-    userAvatar: { type: String, default: "" },
     rating: { type: Number, min: 1, max: 5, required: true },
     comment: { type: String, trim: true, required: true },
     images: [{ type: Schema.Types.Mixed }],
