@@ -22,11 +22,11 @@ const orderSchema = new Schema(
       required: true,
     }, // Tham chiếu đến User
     code: { type: Number, required: true },
-    orderItems: [orderItemSchema], // Mảng các sản phẩm trong đơn hàng
-    totalProduct: { type: Number, default: 0 }, // Tổng số lượng sản phẩm
-    subTotal: { type: Number, default: 0 }, // Tổng tiền sản phẩm
-    shippingFee: { type: Number, default: 0 }, // Phí vận chuyển
-    discount: { type: String, default: "" }, // Mã giảm giá
+    orderItems: [orderItemSchema],
+    totalProduct: { type: Number, default: 0 },
+    subTotal: { type: Number, default: 0 },
+    shippingFee: { type: Number, default: 0 },
+    discount: { type: String, default: "" },
     discountPrice: { type: Number, default: 0 },
     shippingAddress: {
       houseNumber: { type: String, required: true },
@@ -34,14 +34,14 @@ const orderSchema = new Schema(
       city: { type: String, required: true },
       defaultAddress: { type: Boolean, default: false },
     },
-    deliveryMethod: { type: String, required: true }, // Phương thức giao hàng
-    paymentMethod: { type: String, required: true }, // Phương thức thanh toán
-    trackingNumber: { type: String, default: "" }, // Số theo dõi giao hàng,
+    deliveryMethod: { type: String, required: true },
+    paymentMethod: { type: String, required: true },
+    trackingNumber: { type: String, default: "" },
     isPaid: { type: Boolean, default: false },
-    totalPrice: { type: Number, required: true }, // ✅ Thêm dòng này đúng chuẩn
+    totalPrice: { type: Number, required: true },
     status: { type: String, default: "fullfilled" },
   },
-  { timestamps: true } // Thêm các trường createdAt và updatedAt
+  { timestamps: true }
 );
 
 // Tạo model cho đơn hàng

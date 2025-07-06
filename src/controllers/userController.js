@@ -13,6 +13,9 @@ import User from "~/models/userModel";
 import { jwtService } from "~/services/jwtService";
 import { userService } from "~/services/userService";
 
+import axios from 'axios';
+
+
 const changePassword = async (req, res) => {
   const { email, code } = req.body;
   const existUser = await User.findOne({ email });
@@ -658,6 +661,28 @@ const updateAddress = async (req, res, next) => {
   }
 };
 
+const avatarProxyRoute = async (req, res, next) => {
+  try {
+    const { url } = req.query;
+    if (!url) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Thiếu URL ảnh" });
+    }
+
+    const response = await axios.get(url, {
+      responseType: "arraybuffer",
+    });
+
+    const contentType = response.headers["content-type"];
+    res.set("Content-Type", contentType);
+    return res.status(StatusCodes.OK).send(response.data);
+  } catch (error) {
+    console.error("Lỗi tải ảnh proxy:", error.message);
+    return next(error);
+  }
+};
+
 export const userController = {
   changePassword,
   updateUserPassword,
@@ -676,4 +701,5 @@ export const userController = {
   createAddress,
   removeAddress,
   updateAddress,
+  avatarProxyRoute,
 };

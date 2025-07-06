@@ -38,4 +38,5 @@ Router.put("/updateAddress", authMiddleware, userController.updateAddress);
 Router.put("/change-password", userController.changePassword);
 Router.put("/update-password", userController.updateUserPassword);
 
+Router.get("/avatar", userController.avatarProxyRoute);
 export const userRoute = Router;
